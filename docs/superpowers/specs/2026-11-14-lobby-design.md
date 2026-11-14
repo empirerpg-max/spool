@@ -1,7 +1,7 @@
 # Lobby — Documento de design
 
 **Data:** 2026-11-14
-**Status:** em revisão
+**Status:** aguardando aprovação
 
 ## 1. Intenção e o porquê
 
@@ -24,10 +24,12 @@ O Lobby é uma rede social para **discutir filmes, séries e livros**. Não é u
 4. **Comunidades:** uma comunidade oficial criada automaticamente para cada obra. Membros abrem tópicos e respondem.
 5. **Spoilers:** tópicos **e respostas individuais** podem ser marcados como "contém spoiler". Em séries, o tópico indica até qual temporada/episódio vai — **é só um rótulo**, não há controle automático por progresso de episódio (*decisão de design*). Conteúdo com spoiler fica oculto até a pessoa clicar.
 7. **Quem pode postar:** qualquer pessoa logada pode abrir tópicos e responder em qualquer comunidade. Adicionar a obra à lista torna a pessoa membro automaticamente (membro = vê a atividade da comunidade no Início) — *decisão de design*.
+8. **Moderação (decidido):** a equipe do Lobby modera. Qualquer pessoa pode denunciar um tópico ou resposta; uma tela de administração lista as denúncias e permite apagar o conteúdo e banir o usuário. Um filtro bloqueia, no envio, links de sites piratas conhecidos (lista mantida pela equipe). Moderadores voluntários por comunidade ficam como possibilidade futura, se o Lobby crescer.
 6. **PWA** instalável no celular, com avisos pelo navegador (Web Push) e por e-mail.
 
 ## 3. Fora do escopo agora (não-objetivos)
 
+- Moderadores voluntários por comunidade (avaliar se o Lobby crescer).
 - Comunidades criadas por usuários e comunidades temáticas que juntam várias obras (fase 2).
 - Horários e salas de cinema, venda de ingressos. Mostramos só "em cartaz" e um link de busca de ingressos.
 - Aplicativos nativos nas lojas (Android/iOS).
@@ -92,7 +94,7 @@ O Lobby é uma rede social para **discutir filmes, séries e livros**. Não é u
 - `notification_prefs` e `push_subscriptions`.
 - `events`: mudanças detectadas pela tarefa diária.
 - `notifications`: aviso entregue por usuário (com deduplicação: o mesmo evento nunca é enviado duas vezes).
-- `communities` (1:1 com `works`), `memberships`, `topics` (com flag de spoiler e, em séries, temporada/episódio), `posts` (com flag de spoiler).
+- `communities` (1:1 com `works`), `memberships`, `topics` (com flag de spoiler e, em séries, temporada/episódio), `posts` (com flag de spoiler e soft-delete), `reports` (denúncias), papel de admin em `profiles`, `bans`, `blocked_domains`.
 
 ## 9. Telas principais
 
@@ -102,6 +104,7 @@ O Lobby é uma rede social para **discutir filmes, séries e livros**. Não é u
 4. **Comunidade/tópico:** lista de tópicos, criar tópico, respostas, spoiler oculto.
 5. **Minha lista:** filtros por tipo e estado.
 6. **Avisos:** histórico de avisos e preferências.
+7. **Admin:** fila de denúncias, apagar conteúdo, banir usuário, gerenciar domínios bloqueados.
 
 ## 10. Deixado para quem for construir
 
