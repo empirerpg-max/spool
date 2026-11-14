@@ -23,9 +23,9 @@ O Lobby é uma rede social para **discutir filmes, séries e livros**. Não é u
    - livro foi **lançado** ou entrou em **pré-venda**, quando a fonte informar.
 4. **Comunidades:** uma comunidade oficial criada automaticamente para cada obra. Membros abrem tópicos e respondem.
 5. **Spoilers:** tópicos **e respostas individuais** podem ser marcados como "contém spoiler". Em séries, o tópico indica até qual temporada/episódio vai — **é só um rótulo**, não há controle automático por progresso de episódio (*decisão de design*). Conteúdo com spoiler fica oculto até a pessoa clicar.
-7. **Quem pode postar:** qualquer pessoa logada pode abrir tópicos e responder em qualquer comunidade. Adicionar a obra à lista torna a pessoa membro automaticamente (membro = vê a atividade da comunidade no Início) — *decisão de design*.
-8. **Moderação (decidido):** a equipe do Lobby modera. Qualquer pessoa pode denunciar um tópico ou resposta; uma tela de administração lista as denúncias e permite apagar o conteúdo e banir o usuário. Um filtro bloqueia, no envio, links de sites piratas conhecidos (lista mantida pela equipe). Moderadores voluntários por comunidade ficam como possibilidade futura, se o Lobby crescer.
-6. **PWA** instalável no celular, com avisos pelo navegador (Web Push) e por e-mail.
+6. **Quem pode postar:** qualquer pessoa logada pode abrir tópicos e responder em qualquer comunidade. Adicionar a obra à lista torna a pessoa membro automaticamente (membro = vê a atividade da comunidade no Início) — *decisão de design*.
+7. **Moderação (decidido):** a equipe do Lobby modera. Qualquer pessoa pode denunciar um tópico ou resposta; uma tela de administração lista as denúncias e permite apagar o conteúdo e banir o usuário. Um filtro bloqueia, no envio, links de sites piratas conhecidos (lista mantida pela equipe). Moderadores voluntários por comunidade ficam como possibilidade futura, se o Lobby crescer.
+8. **PWA** instalável no celular, com avisos pelo navegador (Web Push) e por e-mail.
 
 ## 3. Fora do escopo agora (não-objetivos)
 
