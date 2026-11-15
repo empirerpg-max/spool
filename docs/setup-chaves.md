@@ -116,3 +116,31 @@ Com isso, toda mudança de tabela que entrar no `main` é aplicada sozinha no Su
 Se você **não** colou o SQL antes, rode o mesmo **Run workflow** com o campo vazio — ele cria as tabelas.
 
 Depois disso, não precisa fazer mais nada: cada etapa nova aplica as próprias mudanças. Se uma execução falhar, a aba **Actions** mostra um ❌ — me mande o print do erro.
+
+## 7. Login (Supabase Auth)
+
+### 7a. Endereços do site (obrigatório)
+
+Supabase → **Authentication** → **URL Configuration**:
+
+- **Site URL:** `https://spool-eta-eight.vercel.app`
+- **Redirect URLs** → **Add URL**, uma de cada vez:
+  - `https://spool-eta-eight.vercel.app/**`
+  - `https://*-lobby-9cae.vercel.app/**` (os links de teste da Vercel)
+- **Save**.
+
+### 7b. Entrar com Google (recomendado, gratuito)
+
+1. **Google Cloud** (mesmo projeto `lobby` da Books API) → **APIs e serviços → Tela de consentimento OAuth** (*Google Auth Platform*):
+   - Tipo **Externo**, nome do app **Lobby**, seu e-mail de suporte → salvar.
+   - Em **Público-alvo**, clique em **Publicar app** (senão só usuários de teste conseguem entrar).
+2. **APIs e serviços → Credenciais → + Criar credenciais → ID do cliente OAuth**:
+   - Tipo: **Aplicativo da Web**, nome `Lobby`.
+   - **URIs de redirecionamento autorizados → + Adicionar URI:** `https://SEU_PROJECT_ID.supabase.co/auth/v1/callback` (o mesmo código do `SUPABASE_PROJECT_ID`).
+   - **Criar** → copie o **ID do cliente** e a **Chave secreta do cliente**.
+3. **Supabase → Authentication → Sign In / Providers → Google**: ative, cole o **Client ID** e o **Client Secret** → **Save**.
+4. **Vercel → Environment Variables**: crie `NEXT_PUBLIC_GOOGLE_LOGIN` = `on` (tipo **Config**, Production e Preview) → **Redeploy**.
+
+### 7c. Entrar por e-mail (limitado por enquanto)
+
+O e-mail embutido do Supabase só entrega para pessoas da sua equipe no Supabase e poucas mensagens por hora. Para abrir para todo mundo é preciso um provedor de e-mail (ex.: Resend) com **um domínio próprio** (ex.: `lobby.com.br`). Fica para quando houver domínio; até lá, o Google é a porta de entrada.
