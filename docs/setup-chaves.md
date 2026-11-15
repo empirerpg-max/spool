@@ -2,10 +2,12 @@
 
 São três serviços, todos gratuitos: **TMDB** (filmes e séries), **Google Books** (livros) e **Supabase** (banco de dados).
 
-No fim, as chaves vão para dois lugares:
+**Tudo é feito pelo navegador; nada roda no seu computador.** As chaves ficam guardadas, criptografadas, nos painéis dos serviços:
 
-- **No seu computador:** um arquivo chamado `.env.local`, na pasta do projeto. Esse arquivo **nunca vai para o GitHub**, porque o `.gitignore` já o ignora.
-- **No site publicado:** na Vercel, em *Settings → Environment Variables*. Isso só será necessário quando formos publicar.
+- **Vercel** (*Environment Variables*): as 5 chaves do site.
+- **GitHub Secrets** (*Settings → Secrets and variables → Actions*): só a senha do banco, quando a automação de tabelas existir.
+
+Nenhuma chave entra no código ou no repositório.
 
 > **Nunca cole as chaves no chat, num e-mail ou num arquivo que vá para o GitHub.** Se uma chave vazar, gere outra no próprio serviço e apague a antiga.
 
@@ -73,22 +75,22 @@ No fim, as chaves vão para dois lugares:
 
 ---
 
-## 4. Onde colocar: o arquivo `.env.local`
+## 4. Onde colocar: Vercel
 
-1. Na pasta do projeto, copie o arquivo `.env.example` e dê o nome `.env.local` à cópia.
-2. Preencha assim (sem aspas e sem espaços):
+1. Em **vercel.com**, abra o projeto **spool** → **Environment Variables** (menu esquerdo).
+2. Crie as 5 variáveis abaixo, uma por vez (*Key* = nome, *Value* = a chave), marcando **Production** e **Preview**:
 
-```
-TMDB_API_READ_TOKEN=eyJhbGciOi...seu-token-longo
-GOOGLE_BOOKS_API_KEY=AIza...sua-chave
-NEXT_PUBLIC_SUPABASE_URL=https://abcd1234.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
-SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
-```
+| Key | Value |
+|---|---|
+| `TMDB_API_READ_TOKEN` | Token de Leitura da API (v4) do TMDB, começa com `eyJ` |
+| `GOOGLE_BOOKS_API_KEY` | chave do Google Cloud, começa com `AIza` |
+| `NEXT_PUBLIC_SUPABASE_URL` | API URL do Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Publishable key, começa com `sb_publishable_` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Secret key, começa com `sb_secret_` |
 
-3. Salve o arquivo. Para conferir que ele não vai para o GitHub, rode `git status`: o `.env.local` **não pode aparecer na lista**.
-4. Rode `npm run dev` e abra http://localhost:3000.
+3. A Vercel publica sozinha a cada envio para o GitHub. Se você mudar uma chave depois, vá em **Deployments**, clique nos `⋯` da publicação mais recente e escolha **Redeploy**, para que ela passe a usar a chave nova.
 
-## 5. Quando publicar na Vercel
+## 5. Criar as tabelas no Supabase
 
-Em **vercel.com → seu projeto → Settings → Environment Variables**, crie as mesmas cinco variáveis com os mesmos valores, marcando *Production* e *Preview*. Depois clique em **Redeploy**.
+1. No GitHub, abra `supabase/migrations/` e cada arquivo `.sql`, em ordem de nome. Clique em **Copy raw file**.
+2. No Supabase, vá em **SQL Editor** → **New query**, cole o conteúdo e clique em **Run**. Deve aparecer *Success*.
