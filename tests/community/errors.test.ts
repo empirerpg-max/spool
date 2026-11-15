@@ -20,3 +20,9 @@ describe('dbErrorMessage', () => {
     expect(dbErrorMessage({})).toBe('Não foi possível salvar. Tente de novo.');
   });
 });
+
+describe('dbErrorMessage for reviews', () => {
+  it('maps no_review', () => {
+    expect(dbErrorMessage({ code: 'P0001', message: 'no_review' })).toBe('Escreva a resenha antes de publicar.');
+  });
+});

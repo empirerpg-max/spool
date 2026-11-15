@@ -5,6 +5,7 @@ const MESSAGES: Record<string, string> = {
   no_username: 'Escolha um nome de usuário antes de postar.',
   not_signed_in: 'Entre para participar.',
   topic_closed: 'Este tópico foi removido.',
+  no_review: 'Escreva a resenha antes de publicar.',
 };
 
 const FALLBACK = 'Não foi possível salvar. Tente de novo.';
