@@ -90,3 +90,12 @@ describe('normalizeBook', () => {
     expect(w.overview).toBe('An English blurb.');
   });
 });
+
+describe('Google Books language codes', () => {
+  it('treats pt-BR description as Portuguese', async () => {
+    const gbooksPtBr = (await import('../fixtures/gbooks-ptbr.json')).default;
+    const w = normalizeBook(olWork, authors, [], gbooksPtBr);
+    expect(w.overviewLang).toBe('pt-BR');
+    expect(w.overview).toBe('Capitu tem olhos de ressaca.');
+  });
+});

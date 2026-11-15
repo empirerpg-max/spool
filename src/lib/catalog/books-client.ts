@@ -1,4 +1,5 @@
 import { getJson, type FetchImpl } from './http';
+import { WorkNotFoundError } from './errors';
 import { normalizeBook, normalizeOpenLibrarySearch, pickIsbns } from './books-normalize';
 import type { NormalizedWork, SearchHit } from './types';
 
@@ -22,18 +23,38 @@ async function googleBooks(q: string, extra: Record<string, string>, fetchImpl: 
   return optional(getJson(`${GB}?${params}`, 'books', { Accept: 'application/json' }, fetchImpl));
 }
 
+const fold = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+
+/** A title-search hit is only trusted when its title contains the Open Library title. */
+function sameBook(gbooks: unknown, olTitle: string): boolean {
+  const title = (gbooks as { items?: Array<{ volumeInfo?: { title?: string } }> })?.items?.[0]?.volumeInfo?.title;
+  return typeof title === 'string' && fold(title).includes(fold(olTitle));
+}
+
+type OlWork = { title?: string; type?: { key?: string }; location?: string; authors?: Array<{ author?: { key?: string } }> };
+
+/** Open Library answers merged works with a 200 redirect record; deleted works with a delete record. */
+async function loadWork(olWorkId: string, fetchImpl: FetchImpl): Promise<OlWork> {
+  let work = (await getJson(`${OL}/works/${olWorkId}.json`, 'books', OL_HEADERS, fetchImpl)) as OlWork;
+  if (work?.type?.key === '/type/redirect' && typeof work.location === 'string') {
+    work = (await getJson(`${OL}${work.location}.json`, 'books', OL_HEADERS, fetchImpl)) as OlWork;
+  }
+  if (work?.type?.key === '/type/delete' || work?.type?.key === '/type/redirect' || !work?.title) {
+    throw new WorkNotFoundError(olWorkId);
+  }
+  return work;
+}
+
 const hasItems = (j: unknown) => Array.isArray((j as { items?: unknown[] } | null)?.items) && (j as { items: unknown[] }).items.length > 0;
 
 export async function fetchBook(olWorkId: string, fetchImpl: FetchImpl = fetch): Promise<NormalizedWork> {
-  const work = (await getJson(`${OL}/works/${olWorkId}.json`, 'books', OL_HEADERS, fetchImpl)) as {
-    title?: string;
-    authors?: Array<{ author?: { key?: string } }>;
-  };
+  const work = await loadWork(olWorkId, fetchImpl);
+  const canonicalId = String((work as { key?: string }).key ?? `/works/${olWorkId}`).replace(/^\/works\//, '');
 
   const authorKeys = (work.authors ?? []).map((a) => a?.author?.key).filter((k): k is string => !!k).slice(0, MAX_AUTHORS);
   const [authorJsons, editions] = await Promise.all([
     Promise.all(authorKeys.map((k) => optional(getJson(`${OL}${k}.json`, 'books', OL_HEADERS, fetchImpl)))),
-    optional(getJson(`${OL}/works/${olWorkId}/editions.json?limit=50`, 'books', OL_HEADERS, fetchImpl)),
+    optional(getJson(`${OL}/works/${canonicalId}/editions.json?limit=50`, 'books', OL_HEADERS, fetchImpl)),
   ]);
   const authors = authorJsons.map((a) => (a as { name?: string } | null)?.name).filter((n): n is string => !!n);
   const isbns = pickIsbns(editions);
@@ -41,12 +62,13 @@ export async function fetchBook(olWorkId: string, fetchImpl: FetchImpl = fetch):
   let gbooks: unknown | null = null;
   if (isbns[0]) gbooks = await googleBooks(`isbn:${isbns[0]}`, {}, fetchImpl);
   if (!hasItems(gbooks) && work.title) {
-    const q = `intitle:${work.title}${authors[0] ? `+inauthor:${authors[0]}` : ''}`;
+    const q = `intitle:"${work.title}"${authors[0] ? ` inauthor:"${authors[0]}"` : ''}`;
     const byTitle = await googleBooks(q, { langRestrict: 'pt' }, fetchImpl);
-    if (hasItems(byTitle)) gbooks = byTitle;
+    if (hasItems(byTitle) && sameBook(byTitle, work.title)) gbooks = byTitle;
   }
 
-  return normalizeBook(work, authors, isbns, hasItems(gbooks) ? gbooks : null);
+  // Cache under the id that was requested, so a redirected work still hits the cache next time.
+  return { ...normalizeBook(work, authors, isbns, hasItems(gbooks) ? gbooks : null), externalId: olWorkId };
 }
 
 export async function searchBooks(query: string, fetchImpl: FetchImpl = fetch): Promise<SearchHit[]> {

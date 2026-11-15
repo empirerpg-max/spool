@@ -67,3 +67,48 @@ describe('searchBooks', () => {
     expect(hits[0].kind).toBe('book');
   });
 });
+
+describe('fetchBook safeguards', () => {
+  it('title search sends a space-separated query without encoded plus', async () => {
+    const f = fakeFetch([
+      ...olRoutes(),
+      { match: /googleapis.*isbn/, body: gbooksEmpty },
+      { match: /googleapis.*intitle/, body: gbooksEmpty },
+    ]);
+    await fetchBook('OL1149208W', f);
+    const titleCall = String(f.mock.calls.find(([u]) => String(u).includes('intitle'))![0]);
+    expect(titleCall).not.toContain('%2B');
+    expect(new URL(titleCall).searchParams.get('q')).toBe('intitle:"Dom Casmurro" inauthor:"Machado de Assis"');
+  });
+
+  it('ignores a title-search hit for a different book', async () => {
+    const wrong = (await import('../fixtures/gbooks-wrong-book.json')).default;
+    const f = fakeFetch([
+      ...olRoutes(),
+      { match: /googleapis.*isbn/, body: gbooksEmpty },
+      { match: /googleapis.*intitle/, body: wrong },
+    ]);
+    const w = await fetchBook('OL1149208W', f);
+    expect(w.title).toBe('Dom Casmurro');
+    expect(w.posterUrl).toBe('https://covers.openlibrary.org/b/id/8231856-L.jpg');
+  });
+
+  it('follows an Open Library redirect and keeps the requested id', async () => {
+    const redirect = (await import('../fixtures/ol-work-redirect.json')).default;
+    const f = fakeFetch([
+      { match: /works\/OL1W\.json/, body: redirect },
+      ...olRoutes(),
+      { match: /googleapis/, body: gbooksEmpty },
+      { match: /googleapis/, body: gbooksEmpty },
+    ]);
+    const w = await fetchBook('OL1W', f);
+    expect(w.title).toBe('Dom Casmurro');
+    expect(w.externalId).toBe('OL1W');
+  });
+
+  it('deleted Open Library work is not found', async () => {
+    const deleted = (await import('../fixtures/ol-work-deleted.json')).default;
+    const f = fakeFetch([{ match: /works\/OL2W\.json/, body: deleted }]);
+    await expect(fetchBook('OL2W', f)).rejects.toBeInstanceOf(WorkNotFoundError);
+  });
+});

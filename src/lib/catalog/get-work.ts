@@ -26,21 +26,30 @@ export async function getOrFetchWork(
   kind: WorkKind,
   externalId: string,
   deps: { repo?: WorkRepository; fetchers?: Fetchers; now?: Date } = {},
-): Promise<{ id: string; work: NormalizedWork; stale: boolean }> {
+): Promise<{ id: string | null; work: NormalizedWork; stale: boolean }> {
   const base = deps.repo && deps.fetchers ? null : await defaults();
   const repo = deps.repo ?? base!.repo;
   const fetchers = deps.fetchers ?? base!.fetchers;
   const now = deps.now ?? new Date();
 
-  const cached = await repo.find(kind, externalId);
+  // The database is a cache: if it is down (e.g. paused free project), serve straight from the source.
+  const cached = await repo.find(kind, externalId).catch((e) => {
+    console.error('[catalog] cache read failed', e);
+    return null;
+  });
   if (cached && !needsRefresh(cached.syncedAt, now)) return { id: cached.id, work: cached.work, stale: false };
 
+  let work: NormalizedWork;
   try {
-    const work = kind === 'book' ? await fetchers.book(externalId) : await fetchers.tmdb(kind, externalId);
-    const id = await repo.save(work);
-    return { id, work, stale: false };
+    work = kind === 'book' ? await fetchers.book(externalId) : await fetchers.tmdb(kind, externalId);
   } catch (e) {
     if (cached && e instanceof CatalogUnavailableError) return { id: cached.id, work: cached.work, stale: true };
     throw e;
   }
+
+  const id = await repo.save(work).catch((e) => {
+    console.error('[catalog] cache write failed', e);
+    return cached?.id ?? null;
+  });
+  return { id, work, stale: false };
 }

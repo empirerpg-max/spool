@@ -88,3 +88,29 @@ describe('getOrFetchWork', () => {
     await expect(getOrFetchWork('movie', '1', { repo: memoryRepo(), fetchers: f, now: NOW })).rejects.toBeInstanceOf(WorkNotFoundError);
   });
 });
+
+describe('getOrFetchWork with database failures', () => {
+  const broken = (part: 'find' | 'save'): WorkRepository => ({
+    find: part === 'find' ? async () => { throw new Error('Supabase: paused'); } : async () => null,
+    save: async () => { throw new Error('Supabase: paused'); },
+  });
+
+  it('database read failure still serves the fetched work', async () => {
+    const f = fetchers(async () => work('Matrix'));
+    const r = await getOrFetchWork('movie', '603', { repo: broken('find'), fetchers: f, now: NOW });
+    expect(r).toEqual({ id: null, work: work('Matrix'), stale: false });
+  });
+
+  it('database write failure still serves the fetched work', async () => {
+    const f = fetchers(async () => work('Matrix'));
+    const r = await getOrFetchWork('movie', '603', { repo: broken('save'), fetchers: f, now: NOW });
+    expect(r).toEqual({ id: null, work: work('Matrix'), stale: false });
+  });
+
+  it('stale hit whose refresh cannot be saved keeps the cached id', async () => {
+    const repo = memoryRepo({ work: work('Old'), syncedAt: daysAgo(10) });
+    repo.save = async () => { throw new Error('Supabase: paused'); };
+    const r = await getOrFetchWork('movie', '603', { repo, fetchers: fetchers(async () => work('Fresh')), now: NOW });
+    expect(r).toMatchObject({ id: 'id-1', stale: false, work: { title: 'Fresh' } });
+  });
+});

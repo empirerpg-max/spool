@@ -66,7 +66,7 @@ export function normalizeBook(work: unknown, authors: string[], isbns: string[],
   const olDesc = str(typeof w?.description === 'string' ? w.description : w?.description?.value);
   if (gDesc) {
     overview = stripHtml(gDesc);
-    overviewLang = info?.language === 'pt' ? 'pt-BR' : 'en';
+    overviewLang = /^pt\b/i.test(String(info?.language ?? '')) ? 'pt-BR' : 'en';
   } else if (olDesc) {
     overview = olDesc;
     overviewLang = 'en';
