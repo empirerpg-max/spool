@@ -15,8 +15,12 @@ export async function searchCatalog(
 
   const [tmdb, books] = await Promise.allSettled([deps.tmdb(q), deps.books(q)]);
   const unavailable: Array<'tmdb' | 'books'> = [];
-  if (tmdb.status === 'rejected') unavailable.push('tmdb');
-  if (books.status === 'rejected') unavailable.push('books');
+  for (const [source, r] of [['tmdb', tmdb], ['books', books]] as const) {
+    if (r.status === 'rejected') {
+      unavailable.push(source);
+      console.error(`[catalog] ${source} search failed:`, r.reason instanceof Error ? r.reason.message : String(r.reason));
+    }
+  }
   return {
     hits: [...(tmdb.status === 'fulfilled' ? tmdb.value : []), ...(books.status === 'fulfilled' ? books.value : [])],
     unavailable,

@@ -32,3 +32,15 @@ describe('searchCatalog', () => {
     expect(r.unavailable).toEqual([]);
   });
 });
+
+describe('searchCatalog logging', () => {
+  it('logs why a source failed so it shows up in server logs', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    await searchCatalog('matrix', {
+      tmdb: vi.fn(async () => { throw new CatalogUnavailableError('tmdb', 'tmdb respondeu 401'); }),
+      books: vi.fn(async () => []),
+    });
+    expect(spy).toHaveBeenCalledWith('[catalog] tmdb search failed:', 'tmdb respondeu 401');
+    spy.mockRestore();
+  });
+});
