@@ -83,3 +83,24 @@ describe('searchTmdb', () => {
     expect(hits[0].title).toBe('Matrix');
   });
 });
+
+describe('searchTmdbMovie', () => {
+  it('searches movies with year in pt-BR', async () => {
+    const { searchTmdbMovie } = await import('@/lib/catalog/tmdb-client');
+    const f = fakeFetch([{ match: /search\/movie/, body: { results: [{ id: 603, title: 'Matrix', release_date: '1999-03-31', poster_path: null }] } }]);
+    const hits = await searchTmdbMovie('The Matrix', 1999, f);
+    const url = new URL(String(f.mock.calls[0][0]));
+    expect(url.pathname).toBe('/3/search/movie');
+    expect(url.searchParams.get('query')).toBe('The Matrix');
+    expect(url.searchParams.get('year')).toBe('1999');
+    expect(url.searchParams.get('language')).toBe('pt-BR');
+    expect(hits).toEqual([{ kind: 'movie', externalId: '603', title: 'Matrix', year: 1999, posterUrl: null }]);
+  });
+
+  it('omits year when unknown', async () => {
+    const { searchTmdbMovie } = await import('@/lib/catalog/tmdb-client');
+    const f = fakeFetch([{ match: /search\/movie/, body: { results: [] } }]);
+    await searchTmdbMovie('X', null, f);
+    expect(new URL(String(f.mock.calls[0][0])).searchParams.has('year')).toBe(false);
+  });
+});

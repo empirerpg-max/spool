@@ -35,3 +35,11 @@ export async function searchTmdb(query: string, fetchImpl: FetchImpl = fetch): P
   );
   return normalizeTmdbSearch(json);
 }
+
+/** Movie-only search, optionally pinned to a release year (used to match imported films). */
+export async function searchTmdbMovie(title: string, year: number | null, fetchImpl: FetchImpl = fetch): Promise<SearchHit[]> {
+  const params: Record<string, string> = { query: title, language: 'pt-BR', include_adult: 'false' };
+  if (year) params.year = String(year);
+  const json = (await getJson(url('/search/movie', params), 'tmdb', headers(), fetchImpl)) as { results?: unknown[] };
+  return normalizeTmdbSearch({ results: (json?.results ?? []).map((r) => ({ ...(r as object), media_type: 'movie' })) });
+}
