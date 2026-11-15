@@ -144,8 +144,9 @@ create trigger a_can_write before insert on reports for each row execute functio
 create trigger b_topic_open before insert on posts for each row execute function check_topic_open();
 create trigger c_rate_limit before insert on topics for each row execute function check_rate_limit();
 create trigger c_rate_limit before insert on posts for each row execute function check_rate_limit();
-create trigger d_blocked_links before insert or update on topics for each row execute function check_topic_links();
-create trigger d_blocked_links before insert or update on posts for each row execute function check_post_links();
+-- Só quando o texto muda: moderar ou bloquear um domínio depois não pode travar a remoção nem as respostas.
+create trigger d_blocked_links before insert or update of title, body on topics for each row execute function check_topic_links();
+create trigger d_blocked_links before insert or update of body on posts for each row execute function check_post_links();
 create trigger e_bump_activity after insert on posts for each row execute function bump_topic_activity();
 
 -- RLS
@@ -156,11 +157,21 @@ alter table blocked_domains enable row level security;
 
 create policy "visible topics" on topics for select to anon, authenticated using (deleted_at is null or is_admin());
 create policy "create own topics" on topics for insert to authenticated with check (author_id = auth.uid());
-create policy "visible posts" on posts for select to anon, authenticated using (deleted_at is null or is_admin());
+create policy "visible posts" on posts for select to anon, authenticated using (
+  is_admin() or (deleted_at is null and exists (select 1 from topics t where t.id = topic_id and t.deleted_at is null))
+);
 create policy "create own posts" on posts for insert to authenticated with check (author_id = auth.uid());
 create policy "create own reports" on reports for insert to authenticated with check (reporter_id = auth.uid());
 create policy "admins read reports" on reports for select to authenticated using (is_admin());
 create policy "admins read blocked domains" on blocked_domains for select to authenticated using (is_admin());
+
+-- Usuários só escolhem o conteúdo; datas, contadores e moderação são do banco.
+revoke insert, update, delete on topics, posts, reports from anon, authenticated;
+revoke all on blocked_domains from anon, authenticated;
+grant insert (work_id, title, body, has_spoiler, spoiler_season, spoiler_episode) on topics to authenticated;
+grant insert (topic_id, body, has_spoiler) on posts to authenticated;
+grant insert (topic_id, post_id, reason, note) on reports to authenticated;
+grant select on blocked_domains to authenticated;
 
 -- Ações de administração
 create function resolve_report(p_report_id uuid, p_action text) returns void

@@ -45,7 +45,7 @@ describe.skipIf(!hasDb)('community', () => {
   });
 
   it('anonymous cannot create topic', async () => {
-    await expectDbError(asAnon('insert into topics(work_id, title, body) values ($1, $2, $3)', [work, 'Título', 'x']), /row-level security|not_signed_in/);
+    await expectDbError(asAnon('insert into topics(work_id, title, body) values ($1, $2, $3)', [work, 'Título', 'x']), /row-level security|not_signed_in|permission denied/);
   });
 
   it('user without username cannot post', async () => {
@@ -55,7 +55,7 @@ describe.skipIf(!hasDb)('community', () => {
   it('author_id cannot be forged', async () => {
     await expectDbError(
       asUser(ana, 'insert into topics(work_id, author_id, title, body) values ($1, $2, $3, $4)', [work, bia, 'Título', 'x']),
-      /row-level security/,
+      /row-level security|permission denied/,
     );
   });
 
@@ -87,7 +87,8 @@ describe.skipIf(!hasDb)('community', () => {
 
   it('users cannot edit topics', async () => {
     const t = await topic(ana);
-    await asUser(ana, "update topics set body = 'editado' where id = $1", [t]);
+    await expectDbError(asUser(ana, "update topics set body = 'editado' where id = $1", [t]), /permission denied/);
+    await expectDbError(asUser(ana, 'delete from topics where id = $1', [t]), /permission denied/);
     expect(await asSuperuser('select body from topics where id = $1', [t])).toEqual([{ body: 'Que filme!' }]);
   });
 
@@ -171,5 +172,40 @@ describe.skipIf(!hasDb)('community', () => {
     await asUser(adm, "select add_blocked_domain('pirata.example')");
     await asUser(adm, "select remove_blocked_domain('pirata.example')");
     await expect(topic(ana, 'pirata.example')).resolves.toBeTruthy();
+  });
+
+  it('domain blocked after posting: admin can still remove and others can still reply', async () => {
+    const t = await topic(ana, 'baixe em https://pirata.example/x');
+    const p = await reply(bia, t, 'link de novo: pirata.example');
+    await asUser(adm, "select add_blocked_domain('pirata.example')");
+    await expect(reply(bia, t, 'sem link')).resolves.toBeTruthy();
+    const rp = await report(ana, { postId: p });
+    await asUser(adm, "select resolve_report($1, 'remover')", [rp]);
+    const rt = await report(bia, { topicId: t });
+    await asUser(adm, "select resolve_report($1, 'banir')", [rt]);
+    expect(await asAnon('select id from topics')).toEqual([]);
+  });
+
+  it('users cannot set internal columns on insert', async () => {
+    const bad = [
+      ['insert into topics(work_id, title, body, created_at) values ($1, $2, $3, $4)', [work, 'Título', 'x', '2000-01-01']],
+      ['insert into topics(work_id, title, body, last_activity_at) values ($1, $2, $3, $4)', [work, 'Título', 'x', '2100-01-01']],
+      ['insert into topics(work_id, title, body, reply_count) values ($1, $2, $3, 999)', [work, 'Título', 'x']],
+      ['insert into topics(work_id, title, body, deleted_at) values ($1, $2, $3, now())', [work, 'Título', 'x']],
+    ] as const;
+    for (const [sql, params] of bad) await expectDbError(asUser(ana, sql, [...params]), /permission denied/);
+    const t = await topic(bia);
+    await expectDbError(asUser(ana, 'insert into posts(topic_id, body, created_at) values ($1, $2, $3)', [t, 'x', '2100-01-01']), /permission denied/);
+    await expectDbError(asUser(ana, "insert into reports(topic_id, reason, resolved_at) values ($1, 'spam', now())", [t]), /permission denied/);
+  });
+
+  it('replies of a removed topic are hidden too', async () => {
+    const t = await topic(ana);
+    await reply(bia, t);
+    const r = await report(bia, { topicId: t });
+    await asUser(adm, "select resolve_report($1, 'remover')", [r]);
+    expect(await asAnon('select id from posts where topic_id = $1', [t])).toEqual([]);
+    expect(await asUser(bia, 'select id from posts where topic_id = $1', [t])).toEqual([]);
+    expect(await asUser(adm, 'select id from posts where topic_id = $1', [t])).toHaveLength(1);
   });
 });
