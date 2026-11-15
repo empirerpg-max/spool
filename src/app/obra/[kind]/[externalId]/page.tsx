@@ -1,27 +1,23 @@
-import { cache } from 'react';
-import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { AvailabilityList } from '@/components/work/AvailabilityList';
 import { Trailer } from '@/components/work/Trailer';
+import { CommunitySection } from '@/components/community/CommunitySection';
 import { cinemaStatus } from '@/lib/catalog/cinema';
-import { CatalogUnavailableError, WorkNotFoundError } from '@/lib/catalog/errors';
-import { getOrFetchWork } from '@/lib/catalog/get-work';
-import { isValidExternalId, kindFromSlug } from '@/lib/catalog/kind';
+import { getCurrentUser } from '@/lib/auth/current-user';
+import { listTopics } from '@/lib/community/queries';
+import { loadWork as load } from './load';
 
 type Params = Promise<{ kind: string; externalId: string }>;
 
-/** Shared between generateMetadata and the page within one request. */
-const load = cache(async (slug: string, externalId: string) => {
-  const kind = kindFromSlug(slug);
-  if (!kind || !isValidExternalId(kind, externalId)) notFound();
+async function community(workId: string | null, page: number) {
+  if (!workId) return null;
   try {
-    return await getOrFetchWork(kind, externalId);
+    return await listTopics(workId, page);
   } catch (e) {
-    if (e instanceof WorkNotFoundError) notFound();
-    if (e instanceof CatalogUnavailableError) return null;
-    throw e;
+    console.error('[community] list failed', e);
+    return null;
   }
-});
+}
 
 const todaySaoPaulo = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
 const brDate = (iso: string) => iso.split('-').reverse().join('/');
@@ -32,13 +28,15 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return { title: r ? `${r.work.title} · Lobby` : 'Lobby' };
 }
 
-export default async function WorkPage({ params }: { params: Params }) {
+export default async function WorkPage({ params, searchParams }: { params: Params; searchParams: Promise<{ pagina?: string }> }) {
   const { kind, externalId } = await params;
+  const page = Math.max(1, Number((await searchParams).pagina) || 1);
   const result = await load(kind, externalId);
   if (!result) {
     return <p role="status" className="py-16 text-center text-amber-600">Não foi possível carregar esta obra agora. Tente de novo em instantes.</p>;
   }
   const { work, stale } = result;
+  const [topics, user] = await Promise.all([community(result.id, page), getCurrentUser()]);
   const cinema = work.kind === 'movie' ? cinemaStatus(work, todaySaoPaulo()) : null;
   const year = work.releaseDateBR?.slice(0, 4);
 
@@ -91,6 +89,15 @@ export default async function WorkPage({ params }: { params: Params }) {
       )}
 
       <AvailabilityList kind={work.kind} items={work.availability} />
+
+      <CommunitySection
+        workId={topics ? result.id : null}
+        workPath={result.path}
+        topics={topics?.topics ?? []}
+        hasMore={topics?.hasMore ?? false}
+        page={page}
+        signedIn={Boolean(user)}
+      />
     </article>
   );
 }
