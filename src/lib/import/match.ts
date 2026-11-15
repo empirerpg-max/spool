@@ -25,8 +25,9 @@ export async function matchRow(row: ImportRow, deps: Deps = DEFAULTS): Promise<{
   let hits = await deps.searchMovie(row.title, row.year);
   let pick = row.year === null ? hits[0] : hits.find((h) => h.year === row.year);
   if (!pick && row.year !== null) {
+    // Release years differ by a year between sites (festival vs. theatrical); further than that is another film.
     hits = await deps.searchMovie(row.title, null);
-    pick = hits.find((h) => h.year === row.year) ?? hits[0];
+    pick = hits.find((h) => h.year === row.year) ?? hits.find((h) => h.year !== null && Math.abs(h.year - row.year!) <= 1);
   }
   return pick ? { kind: 'movie', externalId: pick.externalId } : null;
 }

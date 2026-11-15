@@ -39,13 +39,17 @@ function ReviewForm({ kind, workId, workPath, item }: { kind: WorkKind; workId: 
         <input type="checkbox" name="reviewHasSpoiler" defaultChecked={item.reviewHasSpoiler} />
         <span>Contém spoiler</span>
       </label>
-      <div>
-        <label className="flex items-center gap-2">
-          <input type="checkbox" name="publish" defaultChecked={item.published} aria-describedby="publish-help" />
-          <span>Publicar na comunidade</span>
-        </label>
-        <p id="publish-help" className="ml-6 text-xs text-neutral-500">Se marcado, sua resenha vira um tópico na comunidade desta obra.</p>
-      </div>
+      {item.removedByModeration ? (
+        <p className="text-sm text-amber-700 dark:text-amber-400">Sua resenha foi removida da comunidade pela moderação. Ela continua salva só para você.</p>
+      ) : (
+        <div>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" name="publish" defaultChecked={item.published} aria-describedby="publish-help" />
+            <span>Publicar na comunidade</span>
+          </label>
+          <p id="publish-help" className="ml-6 text-xs text-neutral-500">Se marcado, sua resenha vira um tópico na comunidade desta obra.</p>
+        </div>
+      )}
       {state.error && <p role="alert" className="text-red-600">{state.error}</p>}
       {state.ok && <p role="status" className="text-green-700 dark:text-green-400">Salvo!</p>}
       <div className="flex items-center gap-4">

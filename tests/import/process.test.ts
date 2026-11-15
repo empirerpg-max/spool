@@ -14,6 +14,8 @@ function deps(over: Partial<Parameters<typeof processBatch>[1]> = {}) {
     getWork: vi.fn(async (_k: string, id: string) => ({ id: `w-${id}` })),
     saveListItem: vi.fn(async () => {}),
     markItem: vi.fn(async () => {}),
+    bumpAttempts: vi.fn(async () => 1),
+    now: () => 0,
     ...over,
   };
 }
@@ -54,5 +56,20 @@ describe('processBatch', () => {
     expect(await processBatch(items('A', 'B'), d)).toEqual({ imported: 1, notFound: 1, retryLater: 0 });
     expect(d.markItem).toHaveBeenCalledWith('i0', 'nao_encontrado', null);
     expect(d.markItem).toHaveBeenCalledWith('i1', 'importado', 'w-B');
+  });
+
+  it('gives up on a row that keeps failing and moves on', async () => {
+    const match = vi.fn()
+      .mockRejectedValueOnce(new CatalogUnavailableError('books'))
+      .mockResolvedValue({ kind: 'movie', externalId: 'B' });
+    const d = deps({ match, bumpAttempts: vi.fn(async () => 3) });
+    expect(await processBatch(items('A', 'B'), d)).toEqual({ imported: 1, notFound: 1, retryLater: 0 });
+    expect(d.markItem).toHaveBeenCalledWith('i0', 'nao_encontrado', null);
+  });
+
+  it('stops when the time budget is spent', async () => {
+    let t = 0;
+    const d = deps({ now: () => t, match: vi.fn(async (r: ImportRow) => { t += 25_000; return { kind: 'movie' as const, externalId: r.title }; }) });
+    expect(await processBatch(items('A', 'B', 'C'), d)).toEqual({ imported: 2, notFound: 0, retryLater: 0 });
   });
 });

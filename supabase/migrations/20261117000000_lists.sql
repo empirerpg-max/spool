@@ -26,18 +26,25 @@ grant select, delete on list_items to authenticated;
 grant insert (work_id, status, rating, review, review_has_spoiler, finished_on) on list_items to authenticated;
 grant update (status, rating, review, review_has_spoiler, finished_on) on list_items to authenticated;
 
--- Mantém a resenha publicada em sincronia com o tópico (ou despublica se ficou vazia).
+-- Mantém a resenha publicada em sincronia com o tópico.
+-- Não mexe em tópico removido pela moderação nem quando o autor está banido.
+-- Resenha vazia ou com link bloqueado: despublica, mas a edição privada é salva.
 create function sync_review_topic() returns trigger
 language plpgsql security definer set search_path = public as $$
+declare
+  t topics;
 begin
   new.updated_at := now();
-  if new.review_topic_id is not null then
-    if new.review is null or btrim(new.review) = '' then
-      update topics set deleted_at = coalesce(deleted_at, now()) where id = new.review_topic_id;
-      new.review_topic_id := null;
-    elsif new.review is distinct from old.review or new.review_has_spoiler is distinct from old.review_has_spoiler then
-      update topics set body = new.review, has_spoiler = new.review_has_spoiler where id = new.review_topic_id;
-    end if;
+  if new.review_topic_id is null then return new; end if;
+  select * into t from topics where id = new.review_topic_id;
+  if not found or t.deleted_at is not null then return new; end if;
+  if exists (select 1 from profiles where id = new.user_id and banned_at is not null) then return new; end if;
+
+  if new.review is null or btrim(new.review) = '' or has_blocked_link(new.review) then
+    update topics set deleted_at = now() where id = new.review_topic_id;
+    new.review_topic_id := null;
+  elsif new.review is distinct from old.review or new.review_has_spoiler is distinct from old.review_has_spoiler then
+    update topics set body = new.review, has_spoiler = new.review_has_spoiler where id = new.review_topic_id;
   end if;
   return new;
 end;
@@ -58,10 +65,14 @@ create trigger a_unpublish_on_delete before delete on list_items for each row ex
 
 -- Publica a resenha como tópico. Passa pela tabela topics, então valem as regras da comunidade
 -- (banimento, nome de usuário, links bloqueados, limite de postagens).
+-- Publica a resenha como tópico. Passa pela tabela topics, então valem as regras da comunidade
+-- (banimento, nome de usuário, links bloqueados, limite de postagens).
+-- Um vínculo com tópico já removido só existe quando a moderação removeu: não pode republicar.
 create function publish_review(p_work_id uuid) returns uuid
 language plpgsql security definer set search_path = public as $$
 declare
   li list_items;
+  t topics;
   v_topic uuid;
   v_username text;
 begin
@@ -69,11 +80,19 @@ begin
   if not found or li.review is null or btrim(li.review) = '' then
     raise exception 'no_review' using errcode = 'P0001';
   end if;
+  if exists (select 1 from profiles where id = auth.uid() and banned_at is not null) then
+    raise exception 'banned' using errcode = 'P0001';
+  end if;
 
-  if li.review_topic_id is not null
-     and exists (select 1 from topics where id = li.review_topic_id and deleted_at is null) then
-    update topics set body = li.review, has_spoiler = li.review_has_spoiler where id = li.review_topic_id;
-    return li.review_topic_id;
+  if li.review_topic_id is not null then
+    select * into t from topics where id = li.review_topic_id;
+    if found and t.deleted_at is not null then
+      raise exception 'review_removed' using errcode = 'P0001';
+    end if;
+    if found then
+      update topics set body = li.review, has_spoiler = li.review_has_spoiler where id = li.review_topic_id;
+      return li.review_topic_id;
+    end if;
   end if;
 
   select username into v_username from profiles where id = auth.uid();
@@ -85,14 +104,15 @@ begin
 end;
 $$;
 
+-- Tira da comunidade (o autor escolheu). Tópico removido pela moderação continua vinculado.
 create function unpublish_review(p_work_id uuid) returns void
 language plpgsql security definer set search_path = public as $$
 declare
   v_topic uuid;
 begin
   select review_topic_id into v_topic from list_items where user_id = auth.uid() and work_id = p_work_id;
-  if v_topic is not null then
-    update topics set deleted_at = coalesce(deleted_at, now()) where id = v_topic;
+  if v_topic is not null and exists (select 1 from topics where id = v_topic and deleted_at is null) then
+    update topics set deleted_at = now() where id = v_topic;
     update list_items set review_topic_id = null where user_id = auth.uid() and work_id = p_work_id;
   end if;
 end;
@@ -116,6 +136,7 @@ create table import_items (
   row jsonb not null,
   state text not null default 'pendente' check (state in ('pendente', 'importado', 'nao_encontrado')),
   work_id uuid references works on delete set null,
+  attempts int not null default 0,
   unique (import_id, position)
 );
 create index import_items_pending on import_items (import_id, state, position);
@@ -132,4 +153,4 @@ revoke all on imports, import_items from anon, authenticated;
 grant select, delete on imports, import_items to authenticated;
 grant insert (source) on imports to authenticated;
 grant insert (import_id, position, row) on import_items to authenticated;
-grant update (state, work_id) on import_items to authenticated;
+grant update (state, work_id, attempts) on import_items to authenticated;

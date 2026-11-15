@@ -144,4 +144,47 @@ describe.skipIf(!hasDb)('lists', () => {
     await asUser(ana, "update import_items set state = 'importado', work_id = $2 where import_id = $1", [imp, work]);
     expect(await asUser(ana, 'select state from import_items')).toEqual([{ state: 'importado' }]);
   });
+
+  it('editing a published review to add a blocked link keeps the edit and unpublishes', async () => {
+    await saveReview(ana, 'Bom filme');
+    await publish(ana);
+    await asUser(adm, "select add_blocked_domain('pirata.example')");
+    await asUser(ana, "update list_items set review = 'veja em pirata.example' where work_id = $1", [work]);
+    expect(await item(ana)).toEqual({ review: 'veja em pirata.example', review_topic_id: null });
+    expect(await asAnon('select id from topics')).toEqual([]);
+    await expectDbError(publish(ana), 'blocked_link');
+  });
+
+  it('a review removed by moderation stays removed', async () => {
+    await saveReview(ana, 'Original');
+    const topic = await publish(ana);
+    await asUser(bia, "insert into reports(topic_id, reason) values ($1, 'ofensa')", [topic]);
+    const [{ id: rep }] = await asSuperuser<Id>('select id from reports');
+    await asUser(adm, "select resolve_report($1, 'remover')", [rep]);
+
+    await asUser(ana, "update list_items set review = 'Editada depois' where work_id = $1", [work]);
+    expect(await asSuperuser('select body from topics where id = $1', [topic])).toEqual([{ body: 'Original' }]);
+    expect((await item(ana)).review_topic_id).toBe(topic);
+    await expectDbError(publish(ana), 'review_removed');
+    await asUser(ana, 'select unpublish_review($1)', [work]);
+    expect((await item(ana)).review_topic_id).toBe(topic);
+    await expectDbError(publish(ana), 'review_removed');
+    expect(await asSuperuser('select count(*)::int as n from topics where deleted_at is null')).toEqual([{ n: 0 }]);
+  });
+
+  it('a banned person cannot change their published review topic', async () => {
+    await saveReview(ana, 'Antes');
+    const topic = await publish(ana);
+    await asSuperuser('update profiles set banned_at = now() where id = $1', [ana]);
+    await asUser(ana, "update list_items set review = 'Depois do ban' where work_id = $1", [work]);
+    expect(await asSuperuser('select body from topics where id = $1', [topic])).toEqual([{ body: 'Antes' }]);
+    await expectDbError(publish(ana), 'banned');
+  });
+
+  it('import items track failed attempts', async () => {
+    const [{ id: imp }] = await asUser<Id>(ana, "insert into imports(source) values ('letterboxd') returning id");
+    await asUser(ana, "insert into import_items(import_id, position, row) values ($1, 0, '{}')", [imp]);
+    await asUser(ana, 'update import_items set attempts = attempts + 1 where import_id = $1', [imp]);
+    expect(await asUser(ana, 'select attempts from import_items')).toEqual([{ attempts: 1 }]);
+  });
 });

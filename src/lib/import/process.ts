@@ -4,12 +4,19 @@ import type { ListStatus } from '@/lib/list/types';
 import { moreAdvanced, type ImportRow } from './types';
 
 export const BATCH_SIZE = 10;
+/** Stop taking new rows after this long, so a batch stays well under Vercel's 60s limit. */
+export const BATCH_BUDGET_MS = 40_000;
+/** A row whose source keeps failing is given up after this many tries, so it can't stall the import. */
+export const MAX_ATTEMPTS = 3;
 
 type Deps = {
   match: (row: ImportRow) => Promise<{ kind: WorkKind; externalId: string } | null>;
   getWork: (kind: WorkKind, externalId: string) => Promise<{ id: string | null }>;
   saveListItem: (workId: string, row: ImportRow) => Promise<void>;
   markItem: (id: string, state: 'importado' | 'nao_encontrado', workId: string | null) => Promise<void>;
+  /** Increments and returns the row's failed-attempt count. */
+  bumpAttempts: (id: string) => Promise<number>;
+  now?: () => number;
 };
 
 /**
@@ -21,7 +28,10 @@ export async function processBatch(
   deps: Deps,
 ): Promise<{ imported: number; notFound: number; retryLater: number }> {
   const result = { imported: 0, notFound: 0, retryLater: 0 };
+  const now = deps.now ?? Date.now;
+  const start = now();
   for (const { id, row } of items) {
+    if (now() - start >= BATCH_BUDGET_MS) break;
     try {
       const match = await deps.match(row);
       const work = match ? await deps.getWork(match.kind, match.externalId) : null;
@@ -35,6 +45,11 @@ export async function processBatch(
       result.imported++;
     } catch (e) {
       if (e instanceof CatalogUnavailableError) {
+        if ((await deps.bumpAttempts(id).catch(() => MAX_ATTEMPTS)) >= MAX_ATTEMPTS) {
+          await deps.markItem(id, 'nao_encontrado', null).catch(() => {});
+          result.notFound++;
+          continue;
+        }
         result.retryLater++;
         break;
       }

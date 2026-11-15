@@ -7,7 +7,7 @@ import type { ListItem } from '@/lib/list/types';
 
 const item = (over: Partial<ListItem> = {}): ListItem => ({
   workId: 'w1', status: 'quero', rating: null, review: null, reviewHasSpoiler: false, finishedOn: null,
-  published: false, reviewTopicId: null, updatedAt: '2026-11-15T00:00:00Z', ...over,
+  published: false, removedByModeration: false, reviewTopicId: null, updatedAt: '2026-11-15T00:00:00Z', ...over,
 });
 const base = { workPath: '/obra/filme/603', signedIn: true, hasUsername: true };
 
@@ -48,5 +48,12 @@ describe('ListControls', () => {
     expect(screen.getByRole('link', { name: 'Ver na comunidade' })).toHaveAttribute('href', '/obra/filme/603/topicos/t1');
     expect(screen.getByLabelText('Resenha')).toHaveValue('Ótimo');
     expect(screen.getByLabelText('4 estrelas')).toBeChecked();
+  });
+
+  it('explains a review removed by moderation and hides the publish option', () => {
+    render(<ListControls {...base} kind="movie" workId="w1" item={item({ status: 'concluido', review: 'x', reviewTopicId: 't1', removedByModeration: true })} />);
+    expect(screen.getByText('Sua resenha foi removida da comunidade pela moderação. Ela continua salva só para você.')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Publicar na comunidade')).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Ver na comunidade' })).toBeNull();
   });
 });

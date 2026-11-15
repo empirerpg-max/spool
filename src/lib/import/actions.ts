@@ -78,6 +78,12 @@ export async function processImportBatch(importId: string): Promise<ImportCounts
       const { error } = await supabase.from('import_items').update({ state, work_id: workId }).eq('id', id);
       if (error) throw new Error(error.message);
     },
+    bumpAttempts: async (id) => {
+      const { data: cur } = await supabase.from('import_items').select('attempts').eq('id', id).single();
+      const attempts = (cur?.attempts ?? 0) + 1;
+      await supabase.from('import_items').update({ attempts }).eq('id', id);
+      return attempts;
+    },
   });
   return { ...(await importCounts(importId)), retryLater: result.retryLater > 0 };
 }

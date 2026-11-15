@@ -6,6 +6,7 @@ const MESSAGES: Record<string, string> = {
   not_signed_in: 'Entre para participar.',
   topic_closed: 'Este tópico foi removido.',
   no_review: 'Escreva a resenha antes de publicar.',
+  review_removed: 'Sua resenha foi removida pela moderação e não pode ser publicada de novo.',
 };
 
 const FALLBACK = 'Não foi possível salvar. Tente de novo.';

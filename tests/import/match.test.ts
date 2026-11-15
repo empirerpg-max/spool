@@ -23,6 +23,11 @@ describe('matchRow', () => {
     expect(await matchRow(movie(), d)).toEqual({ kind: 'movie', externalId: '438631' });
   });
 
+  it('does not import a film from a different era', async () => {
+    const searchMovie = vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([hit('841', 1984)]);
+    expect(await matchRow(movie(), deps({ searchMovie }))).toBeNull();
+  });
+
   it('retries without year when nothing matches the year', async () => {
     const searchMovie = vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([hit('1', 2020)]);
     expect(await matchRow(movie(), deps({ searchMovie }))).toEqual({ kind: 'movie', externalId: '1' });

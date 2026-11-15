@@ -18,6 +18,8 @@ export type ListItem = {
   reviewHasSpoiler: boolean;
   finishedOn: string | null;
   published: boolean;
+  /** The published review topic was removed by the moderators; it can't be republished. */
+  removedByModeration: boolean;
   reviewTopicId: string | null;
   updatedAt: string;
 };
