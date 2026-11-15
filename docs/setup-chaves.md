@@ -60,12 +60,14 @@ No fim, as chaves vão para dois lugares:
    - **Region:** **South America (São Paulo)**.
    - **Plan:** Free.
 3. Clique em **Create new project** e espere uns 2 minutos.
-4. No menu esquerdo, vá em **Project Settings** (engrenagem) → **API** (ou *Data API* / *API Keys*, conforme a versão do painel). Você vai ver:
-   - **Project URL**, algo como `https://abcd1234.supabase.co`. Vai em `NEXT_PUBLIC_SUPABASE_URL`.
-   - **anon / public** (ou *publishable key*). Vai em `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-   - **service_role** (ou *secret key*). Clique em *Reveal*. Vai em `SUPABASE_SERVICE_ROLE_KEY`.
+4. No menu esquerdo, vá em **Project Settings** (engrenagem) → **API Keys** (e **Data API** para a URL). Você vai ver três coisas:
+   - **API URL** (algo como `https://abcd1234.supabase.co`) → vai em `NEXT_PUBLIC_SUPABASE_URL`.
+   - **Publishable key** (começa com `sb_publishable_`) → vai em `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+   - **Secret keys** (começa com `sb_secret_`; clique no olho para revelar e copie) → vai em `SUPABASE_SERVICE_ROLE_KEY`.
 
-> **A `service_role` é a chave mestra do banco:** ignora todas as regras de segurança. Ela fica só no servidor e nunca pode aparecer no navegador. É por isso que o nome dela não começa com `NEXT_PUBLIC_`.
+   Em painéis mais antigos, essas chaves aparecem com os nomes **anon / public** (= publishable) e **service_role** (= secret). Funcionam do mesmo jeito.
+
+> **A secret key (antiga `service_role`) é a chave mestra do banco:** ignora todas as regras de segurança. Ela fica só no servidor e nunca pode aparecer no navegador. É por isso que o nome dela não começa com `NEXT_PUBLIC_`.
 
 > **Pausa por inatividade:** no plano gratuito, o projeto pausa depois de 7 dias sem uso. Para reativar, basta clicar em **Restore** no painel.
 
@@ -80,8 +82,8 @@ No fim, as chaves vão para dois lugares:
 TMDB_API_READ_TOKEN=eyJhbGciOi...seu-token-longo
 GOOGLE_BOOKS_API_KEY=AIza...sua-chave
 NEXT_PUBLIC_SUPABASE_URL=https://abcd1234.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...chave-anon
-SUPABASE_SERVICE_ROLE_KEY=eyJ...chave-service-role
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
 ```
 
 3. Salve o arquivo. Para conferir que ele não vai para o GitHub, rode `git status`: o `.env.local` **não pode aparecer na lista**.
