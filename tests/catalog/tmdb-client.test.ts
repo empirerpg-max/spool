@@ -14,7 +14,7 @@ describe('fetchTmdbWork', () => {
     const w = await fetchTmdbWork('movie', '603', f);
     expect(w.title).toBe('Matrix');
     expect(f).toHaveBeenCalledTimes(1);
-    const [url, init] = f.mock.calls[0] as [string, RequestInit];
+    const [url, init] = f.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toContain('language=pt-BR');
     expect(url).toContain('append_to_response=videos%2Ccredits%2Cwatch%2Fproviders%2Crelease_dates');
     expect((init.headers as Record<string, string>).Authorization).toBe('Bearer test-token');
