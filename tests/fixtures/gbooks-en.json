@@ -1,0 +1,14 @@
+{
+ "totalItems": 1,
+ "items": [
+  {
+   "id": "def",
+   "volumeInfo": {
+    "title": "Dom Casmurro",
+    "language": "en",
+    "description": "An English blurb.",
+    "publishedDate": "1997-05"
+   }
+  }
+ ]
+}

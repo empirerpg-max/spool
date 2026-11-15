@@ -1,0 +1,20 @@
+{
+ "numFound": 3,
+ "docs": [
+  {
+   "key": "/works/OL1149208W",
+   "title": "Dom Casmurro",
+   "first_publish_year": 1899,
+   "cover_i": 8231856
+  },
+  {
+   "key": "/works/OL20652W",
+   "title": "Memórias Póstumas de Brás Cubas",
+   "first_publish_year": 1881
+  },
+  {
+   "key": "/works/OL99W",
+   "title": "Sem Ano"
+  }
+ ]
+}

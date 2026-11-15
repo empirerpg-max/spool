@@ -1,0 +1,19 @@
+{
+ "key": "/works/OL1149208W",
+ "title": "Dom Casmurro",
+ "description": {
+  "type": "/type/text",
+  "value": "Bento Santiago tells his story."
+ },
+ "covers": [
+  8231856,
+  123
+ ],
+ "authors": [
+  {
+   "author": {
+    "key": "/authors/OL24529A"
+   }
+  }
+ ]
+}

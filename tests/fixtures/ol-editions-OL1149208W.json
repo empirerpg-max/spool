@@ -1,0 +1,38 @@
+{
+ "entries": [
+  {
+   "key": "/books/OL1M",
+   "languages": [
+    {
+     "key": "/languages/eng"
+    }
+   ],
+   "isbn_13": [
+    "9780195103090"
+   ],
+   "isbn_10": [
+    "0195103092"
+   ]
+  },
+  {
+   "key": "/books/OL2M",
+   "languages": [
+    {
+     "key": "/languages/por"
+    }
+   ],
+   "isbn_10": [
+    "8508040091"
+   ],
+   "isbn_13": [
+    "9788508040094"
+   ]
+  },
+  {
+   "key": "/books/OL3M",
+   "isbn_13": [
+    "9780195103090"
+   ]
+  }
+ ]
+}

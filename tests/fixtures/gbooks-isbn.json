@@ -1,0 +1,21 @@
+{
+ "totalItems": 1,
+ "items": [
+  {
+   "id": "abc",
+   "volumeInfo": {
+    "title": "Dom Casmurro (Edição Especial)",
+    "language": "pt",
+    "description": "<p>Bentinho e <b>Capitu</b>.</p>",
+    "publishedDate": "2019",
+    "imageLinks": {
+     "thumbnail": "http://books.google.com/books/content?id=abc&printsec=frontcover&img=1&zoom=5"
+    }
+   },
+   "saleInfo": {
+    "country": "BR",
+    "buyLink": "https://play.google.com/store/books/details?id=abc"
+   }
+  }
+ ]
+}
