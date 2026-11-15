@@ -5,7 +5,8 @@ export type Route = { match: RegExp; status?: number; body?: unknown; headers?: 
 /** Fake fetch: each call consumes the first route whose regex matches the URL. */
 export function fakeFetch(routes: Route[]) {
   const queue = [...routes];
-  return vi.fn(async (input: string | URL | Request) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  return vi.fn(async (input: string | URL | Request, _init?: RequestInit) => {
     const url = String(input);
     const i = queue.findIndex((r) => r.match.test(url));
     if (i === -1) throw new Error(`unexpected fetch ${url}`);
