@@ -42,7 +42,7 @@ jobs:
         run: |
           for v in $JA_APLICADAS; do
             [[ "$v" =~ ^[0-9]{14}$ ]] || { echo "Versão inválida: $v"; exit 1; }
-            npx supabase migration repair --status applied "$v" --remote --password "$SUPABASE_DB_PASSWORD"
+            npx supabase migration repair --status applied "$v" --remote --yes --password "$SUPABASE_DB_PASSWORD"
           done
       - name: Aplicar migrações novas
-        run: npx supabase db push --remote --password "$SUPABASE_DB_PASSWORD"
+        run: npx supabase db push --remote --yes --password "$SUPABASE_DB_PASSWORD"
