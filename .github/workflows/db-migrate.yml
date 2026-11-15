@@ -1,0 +1,48 @@
+# Aplica as migrações de supabase/migrations/ no banco do Supabase
+# sempre que elas mudam no main. Segredos necessários (GitHub → Settings →
+# Secrets and variables → Actions): SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD,
+# SUPABASE_PROJECT_ID. Veja docs/setup-chaves.md.
+name: Banco de dados
+
+on:
+  push:
+    branches: [main]
+    paths: ['supabase/migrations/**']
+  workflow_dispatch:
+    inputs:
+      ja_aplicadas:
+        description: 'Versões que você já rodou à mão no SQL Editor (separadas por espaço), ex.: 20261115000000'
+        required: false
+        default: ''
+
+concurrency:
+  group: db-migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Conectar ao projeto
+        run: npx supabase link --project-ref "$SUPABASE_PROJECT_ID"
+      - name: Marcar migrações já aplicadas à mão
+        if: ${{ inputs.ja_aplicadas != '' }}
+        env:
+          JA_APLICADAS: ${{ inputs.ja_aplicadas }}
+        run: |
+          for v in $JA_APLICADAS; do
+            [[ "$v" =~ ^[0-9]{14}$ ]] || { echo "Versão inválida: $v"; exit 1; }
+            npx supabase migration repair --status applied "$v" --remote --password "$SUPABASE_DB_PASSWORD"
+          done
+      - name: Aplicar migrações novas
+        run: npx supabase db push --remote --password "$SUPABASE_DB_PASSWORD"

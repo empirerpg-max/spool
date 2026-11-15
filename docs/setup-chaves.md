@@ -94,3 +94,25 @@ Nenhuma chave entra no código ou no repositório.
 
 1. No GitHub, abra `supabase/migrations/` e cada arquivo `.sql`, em ordem de nome. Clique em **Copy raw file**.
 2. No Supabase, vá em **SQL Editor** → **New query**, cole o conteúdo e clique em **Run**. Deve aparecer *Success*.
+
+## 6. Automação do banco (GitHub Actions)
+
+Com isso, toda mudança de tabela que entrar no `main` é aplicada sozinha no Supabase — você nunca mais cola SQL.
+
+**Cadastre 3 segredos** em **GitHub → repositório spool → Settings → Secrets and variables → Actions → New repository secret**:
+
+| Name | Onde pegar |
+|---|---|
+| `SUPABASE_ACCESS_TOKEN` | Supabase → seu avatar (canto inferior esquerdo) → **Account preferences** → **Access Tokens** → **Generate new token** (nome: `github-lobby`). Copie na hora; ele não aparece de novo. |
+| `SUPABASE_DB_PASSWORD` | A senha do banco que você guardou ao criar o projeto. Esqueceu? Supabase → **Project Settings → Database → Reset database password** (e atualize aqui). |
+| `SUPABASE_PROJECT_ID` | O código do projeto: é o trecho entre `https://` e `.supabase.co` na sua API URL (ex.: `abcd1234efgh5678ijkl`). |
+
+**Uma única vez, se você já colou o SQL à mão no SQL Editor:**
+
+1. GitHub → aba **Actions** → **Banco de dados** (à esquerda) → botão **Run workflow**.
+2. No campo *"Versões que você já rodou à mão"*, escreva `20261115000000` e clique em **Run workflow**.
+3. Isso avisa ao Supabase que essa tabela já existe, para a automação não tentar criá-la de novo.
+
+Se você **não** colou o SQL antes, rode o mesmo **Run workflow** com o campo vazio — ele cria as tabelas.
+
+Depois disso, não precisa fazer mais nada: cada etapa nova aplica as próprias mudanças. Se uma execução falhar, a aba **Actions** mostra um ❌ — me mande o print do erro.
