@@ -12,14 +12,24 @@ export function needsRefresh(syncedAt: string, now: Date): boolean {
 
 type Fetchers = { tmdb: typeof fetchTmdbWork; book: typeof fetchBook };
 
-async function defaults(): Promise<{ repo: WorkRepository; fetchers: Fetchers }> {
-  const [{ createServiceClient }, { supabaseWorkRepository }, tmdb, books] = await Promise.all([
-    import('@/lib/supabase/server'),
-    import('./repository'),
-    import('./tmdb-client'),
-    import('./books-client'),
-  ]);
-  return { repo: supabaseWorkRepository(createServiceClient()), fetchers: { tmdb: tmdb.fetchTmdbWork, book: books.fetchBook } };
+/** Used when Supabase isn't configured: no cache, every visit fetches from the source. */
+const noCache: WorkRepository = {
+  async find() { return null; },
+  async save() { throw new Error('Supabase não configurado'); },
+};
+
+async function defaultRepo(): Promise<WorkRepository> {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('[catalog] Supabase não configurado: defina NEXT_PUBLIC_SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY');
+    return noCache;
+  }
+  const [{ createServiceClient }, { supabaseWorkRepository }] = await Promise.all([import('@/lib/supabase/server'), import('./repository')]);
+  return supabaseWorkRepository(createServiceClient());
+}
+
+async function defaultFetchers(): Promise<Fetchers> {
+  const [tmdb, books] = await Promise.all([import('./tmdb-client'), import('./books-client')]);
+  return { tmdb: tmdb.fetchTmdbWork, book: books.fetchBook };
 }
 
 export async function getOrFetchWork(
@@ -27,9 +37,8 @@ export async function getOrFetchWork(
   externalId: string,
   deps: { repo?: WorkRepository; fetchers?: Fetchers; now?: Date } = {},
 ): Promise<{ id: string | null; work: NormalizedWork; stale: boolean }> {
-  const base = deps.repo && deps.fetchers ? null : await defaults();
-  const repo = deps.repo ?? base!.repo;
-  const fetchers = deps.fetchers ?? base!.fetchers;
+  const repo = deps.repo ?? (await defaultRepo());
+  const fetchers = deps.fetchers ?? (await defaultFetchers());
   const now = deps.now ?? new Date();
 
   // The database is a cache: if it is down (e.g. paused free project), serve straight from the source.

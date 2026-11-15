@@ -114,3 +114,18 @@ describe('getOrFetchWork with database failures', () => {
     expect(r).toMatchObject({ id: 'id-1', stale: false, work: { title: 'Fresh' } });
   });
 });
+
+describe('getOrFetchWork without Supabase configured', () => {
+  it('serves the fetched work when Supabase env vars are missing', async () => {
+    const saved = { url: process.env.NEXT_PUBLIC_SUPABASE_URL, key: process.env.SUPABASE_SERVICE_ROLE_KEY };
+    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
+    delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    try {
+      const r = await getOrFetchWork('movie', '603', { fetchers: fetchers(async () => work('Matrix')), now: NOW });
+      expect(r).toEqual({ id: null, work: work('Matrix'), stale: false });
+    } finally {
+      if (saved.url) process.env.NEXT_PUBLIC_SUPABASE_URL = saved.url;
+      if (saved.key) process.env.SUPABASE_SERVICE_ROLE_KEY = saved.key;
+    }
+  });
+});
