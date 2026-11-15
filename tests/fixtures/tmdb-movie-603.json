@@ -1,0 +1,130 @@
+{
+ "id": 603,
+ "title": "Matrix",
+ "original_title": "The Matrix",
+ "overview": "Um hacker descobre a verdade sobre a realidade.",
+ "poster_path": "/p96dm7sCMn4VYAStA6siNz30G1r.jpg",
+ "release_date": "1999-03-31",
+ "credits": {
+  "cast": [
+   {
+    "name": "Keanu Reeves"
+   },
+   {
+    "name": "Laurence Fishburne"
+   },
+   {
+    "name": "Carrie-Anne Moss"
+   },
+   {
+    "name": "Hugo Weaving"
+   },
+   {
+    "name": "Joe Pantoliano"
+   },
+   {
+    "name": "Marcus Chong"
+   }
+  ]
+ },
+ "videos": {
+  "results": [
+   {
+    "site": "YouTube",
+    "type": "Teaser",
+    "key": "teaserkey",
+    "iso_639_1": "pt"
+   },
+   {
+    "site": "YouTube",
+    "type": "Trailer",
+    "key": "entrailer",
+    "iso_639_1": "en"
+   },
+   {
+    "site": "YouTube",
+    "type": "Trailer",
+    "key": "pttrailer",
+    "iso_639_1": "pt"
+   }
+  ]
+ },
+ "watch/providers": {
+  "results": {
+   "BR": {
+    "link": "https://www.themoviedb.org/movie/603-the-matrix/watch?locale=BR",
+    "flatrate": [
+     {
+      "provider_name": "Max",
+      "logo_path": "/max.jpg",
+      "provider_id": 1899,
+      "display_priority": 1
+     }
+    ],
+    "rent": [
+     {
+      "provider_name": "Apple TV",
+      "logo_path": "/apple.jpg",
+      "provider_id": 2,
+      "display_priority": 1
+     },
+     {
+      "provider_name": "Apple TV",
+      "logo_path": "/apple.jpg",
+      "provider_id": 2,
+      "display_priority": 1
+     }
+    ],
+    "buy": [
+     {
+      "provider_name": "Apple TV",
+      "logo_path": "/apple.jpg",
+      "provider_id": 2,
+      "display_priority": 1
+     }
+    ]
+   },
+   "US": {
+    "link": "x",
+    "flatrate": [
+     {
+      "provider_name": "Netflix",
+      "logo_path": "/n.jpg",
+      "provider_id": 8,
+      "display_priority": 1
+     }
+    ]
+   }
+  }
+ },
+ "release_dates": {
+  "results": [
+   {
+    "iso_3166_1": "US",
+    "release_dates": [
+     {
+      "type": 3,
+      "release_date": "1999-03-31T00:00:00.000Z"
+     }
+    ]
+   },
+   {
+    "iso_3166_1": "BR",
+    "release_dates": [
+     {
+      "type": 4,
+      "release_date": "2000-01-10T00:00:00.000Z"
+     },
+     {
+      "type": 3,
+      "release_date": "1999-05-21T00:00:00.000Z"
+     },
+     {
+      "type": 2,
+      "release_date": "1999-05-14T00:00:00.000Z"
+     }
+    ]
+   }
+  ]
+ }
+}

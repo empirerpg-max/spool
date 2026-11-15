@@ -1,0 +1,32 @@
+{
+ "id": 999,
+ "title": "Filme Raro",
+ "original_title": "The Matrix",
+ "overview": "",
+ "poster_path": null,
+ "release_date": "2024-02-02",
+ "credits": {
+  "cast": []
+ },
+ "videos": {
+  "results": []
+ },
+ "watch/providers": {
+  "results": {
+   "US": {
+    "link": "x",
+    "flatrate": [
+     {
+      "provider_name": "Netflix",
+      "logo_path": "/n.jpg",
+      "provider_id": 8,
+      "display_priority": 1
+     }
+    ]
+   }
+  }
+ },
+ "release_dates": {
+  "results": []
+ }
+}

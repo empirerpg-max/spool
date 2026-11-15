@@ -1,0 +1,30 @@
+{
+ "page": 1,
+ "results": [
+  {
+   "media_type": "movie",
+   "id": 603,
+   "title": "Matrix",
+   "release_date": "1999-03-31",
+   "poster_path": "/p96.jpg"
+  },
+  {
+   "media_type": "person",
+   "id": 6384,
+   "name": "Keanu Reeves"
+  },
+  {
+   "media_type": "tv",
+   "id": 1399,
+   "name": "Game of Thrones",
+   "first_air_date": "2011-04-17",
+   "poster_path": null
+  },
+  {
+   "media_type": "movie",
+   "id": 5,
+   "title": "Sem Data",
+   "release_date": ""
+  }
+ ]
+}

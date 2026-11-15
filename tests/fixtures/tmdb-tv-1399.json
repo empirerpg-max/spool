@@ -1,0 +1,85 @@
+{
+ "id": 1399,
+ "name": "Game of Thrones",
+ "original_name": "Game of Thrones",
+ "overview": "Nove famílias nobres lutam pelo controle de Westeros.",
+ "poster_path": "/got.jpg",
+ "first_air_date": "2011-04-17",
+ "seasons": [
+  {
+   "season_number": 0,
+   "air_date": "2010-12-05",
+   "episode_count": 14
+  },
+  {
+   "season_number": 1,
+   "air_date": "2011-04-17",
+   "episode_count": 10
+  },
+  {
+   "season_number": 2,
+   "air_date": null,
+   "episode_count": 10
+  }
+ ],
+ "aggregate_credits": {
+  "cast": [
+   {
+    "name": "Emilia Clarke"
+   },
+   {
+    "name": "Kit Harington"
+   },
+   {
+    "name": "Peter Dinklage"
+   }
+  ]
+ },
+ "videos": {
+  "results": [
+   {
+    "site": "Vimeo",
+    "type": "Trailer",
+    "key": "vim",
+    "iso_639_1": "pt"
+   },
+   {
+    "site": "YouTube",
+    "type": "Trailer",
+    "key": "gottrailer",
+    "iso_639_1": "en"
+   }
+  ]
+ },
+ "watch/providers": {
+  "results": {
+   "BR": {
+    "link": "https://www.themoviedb.org/tv/1399/watch?locale=BR",
+    "flatrate": [
+     {
+      "provider_name": "Max",
+      "logo_path": "/max.jpg",
+      "provider_id": 1899,
+      "display_priority": 1
+     }
+    ],
+    "ads": [
+     {
+      "provider_name": "Pluto TV",
+      "logo_path": "/pluto.jpg",
+      "provider_id": 300,
+      "display_priority": 1
+     }
+    ],
+    "free": [
+     {
+      "provider_name": "Free Thing",
+      "logo_path": "/f.jpg",
+      "provider_id": 301,
+      "display_priority": 1
+     }
+    ]
+   }
+  }
+ }
+}
