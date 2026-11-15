@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:db": "VITEST_DB=1 vitest run tests/db"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",
@@ -23,11 +24,13 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.29",
     "jsdom": "^31.0.1",
+    "pg": "^8.23.1",
     "supabase": "^3.1.0",
     "tailwindcss": "^4",
     "typescript": "^5",

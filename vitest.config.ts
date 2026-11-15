@@ -8,5 +8,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.test.{ts,tsx}'],
+    // Database tests need Postgres: run them with `npm run test:db`.
+    fileParallelism: !process.env.VITEST_DB,
+    exclude: process.env.VITEST_DB ? ['node_modules/**'] : ['tests/db/**', 'node_modules/**'],
   },
 });
