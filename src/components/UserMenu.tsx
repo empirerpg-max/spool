@@ -10,6 +10,7 @@ export async function UserMenu() {
   }
   return (
     <div className="flex items-center gap-4 text-sm">
+      <Link href="/minha-lista">Minha lista</Link>
       {user.isAdmin && <Link href="/admin">Admin</Link>}
       {user.username ? <span>@{user.username}</span> : <Link href="/bem-vindo">Escolher nome</Link>}
       <form action="/sair" method="post">

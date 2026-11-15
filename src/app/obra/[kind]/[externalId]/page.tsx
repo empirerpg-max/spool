@@ -2,12 +2,24 @@ import type { Metadata } from 'next';
 import { AvailabilityList } from '@/components/work/AvailabilityList';
 import { Trailer } from '@/components/work/Trailer';
 import { CommunitySection } from '@/components/community/CommunitySection';
+import { ListControls } from '@/components/list/ListControls';
+import { getListItem } from '@/lib/list/queries';
 import { cinemaStatus } from '@/lib/catalog/cinema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { listTopics } from '@/lib/community/queries';
 import { loadWork as load } from './load';
 
 type Params = Promise<{ kind: string; externalId: string }>;
+
+async function listItem(workId: string | null, signedIn: boolean) {
+  if (!workId || !signedIn) return null;
+  try {
+    return await getListItem(workId);
+  } catch (e) {
+    console.error('[list] get failed', e);
+    return null;
+  }
+}
 
 async function community(workId: string | null, page: number) {
   if (!workId) return null;
@@ -37,6 +49,7 @@ export default async function WorkPage({ params, searchParams }: { params: Param
   }
   const { work, stale } = result;
   const [topics, user] = await Promise.all([community(result.id, page), getCurrentUser()]);
+  const item = await listItem(result.id, Boolean(user));
   const cinema = work.kind === 'movie' ? cinemaStatus(work, todaySaoPaulo()) : null;
   const year = work.releaseDateBR?.slice(0, 4);
 
@@ -72,6 +85,15 @@ export default async function WorkPage({ params, searchParams }: { params: Param
           {stale && <p className="text-xs text-neutral-500">Dados podem estar desatualizados</p>}
         </div>
       </div>
+
+      <ListControls
+        kind={work.kind}
+        workId={result.id}
+        workPath={result.path}
+        item={item}
+        signedIn={Boolean(user)}
+        hasUsername={Boolean(user?.username)}
+      />
 
       <Trailer youtubeKey={work.trailerYoutubeKey} />
 
