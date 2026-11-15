@@ -144,3 +144,10 @@ Supabase → **Authentication** → **URL Configuration**:
 ### 7c. Entrar por e-mail (limitado por enquanto)
 
 O e-mail embutido do Supabase só entrega para pessoas da sua equipe no Supabase e poucas mensagens por hora. Para abrir para todo mundo é preciso um provedor de e-mail (ex.: Resend) com **um domínio próprio** (ex.: `lobby.com.br`). Fica para quando houver domínio; até lá, o Google é a porta de entrada.
+
+## 8. Virar administrador
+
+1. Entre no Lobby uma vez (com Google) e escolha seu nome de usuário.
+2. Supabase → **Table Editor** → tabela **profiles** → ache sua linha (pelo `username`).
+3. Clique na célula **is_admin**, troque para **true** → **Save**.
+4. Recarregue o Lobby: o link **Admin** aparece no topo. Lá ficam as denúncias e os domínios bloqueados.
