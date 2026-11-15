@@ -112,3 +112,33 @@ describe('fetchBook safeguards', () => {
     await expect(fetchBook('OL2W', f)).rejects.toBeInstanceOf(WorkNotFoundError);
   });
 });
+
+describe('findBookByIsbn / findBookByTitle', () => {
+  it('maps an ISBN to its Open Library work id', async () => {
+    const { findBookByIsbn } = await import('@/lib/catalog/books-client');
+    const f = fakeFetch([{ match: /\/isbn\/9788508040094\.json/, body: { works: [{ key: '/works/OL1149208W' }] } }]);
+    expect(await findBookByIsbn('9788508040094', f)).toBe('OL1149208W');
+  });
+
+  it('returns null for an unknown ISBN', async () => {
+    const { findBookByIsbn } = await import('@/lib/catalog/books-client');
+    const f = fakeFetch([{ match: /\/isbn\//, status: 404 }]);
+    expect(await findBookByIsbn('123', f)).toBeNull();
+  });
+
+  it('searches by title and author', async () => {
+    const { findBookByTitle } = await import('@/lib/catalog/books-client');
+    const f = fakeFetch([{ match: /search\.json/, body: { docs: [{ key: '/works/OL20652W' }] } }]);
+    expect(await findBookByTitle('Memórias Póstumas', 'Machado de Assis', f)).toBe('OL20652W');
+    const url = new URL(String(f.mock.calls[0][0]));
+    expect(url.searchParams.get('title')).toBe('Memórias Póstumas');
+    expect(url.searchParams.get('author')).toBe('Machado de Assis');
+    expect(url.searchParams.get('limit')).toBe('1');
+  });
+
+  it('returns null when the search finds nothing', async () => {
+    const { findBookByTitle } = await import('@/lib/catalog/books-client');
+    const f = fakeFetch([{ match: /search\.json/, body: { docs: [] } }]);
+    expect(await findBookByTitle('Nada', null, f)).toBeNull();
+  });
+});

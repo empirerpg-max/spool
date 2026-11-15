@@ -75,3 +75,24 @@ export async function searchBooks(query: string, fetchImpl: FetchImpl = fetch): 
   const params = new URLSearchParams({ q: query, limit: '10', fields: 'key,title,first_publish_year,cover_i' });
   return normalizeOpenLibrarySearch(await getJson(`${OL}/search.json?${params}`, 'books', OL_HEADERS, fetchImpl));
 }
+
+const olWorkId = (key: unknown) => (typeof key === 'string' && key.startsWith('/works/') ? key.slice('/works/'.length) : null);
+
+/** ISBN → Open Library work id, or null when unknown. */
+export async function findBookByIsbn(isbn: string, fetchImpl: FetchImpl = fetch): Promise<string | null> {
+  try {
+    const ed = (await getJson(`${OL}/isbn/${encodeURIComponent(isbn)}.json`, 'books', OL_HEADERS, fetchImpl)) as { works?: Array<{ key?: string }> };
+    return olWorkId(ed?.works?.[0]?.key);
+  } catch (e) {
+    if (e instanceof WorkNotFoundError) return null;
+    throw e;
+  }
+}
+
+/** Best Open Library work for a title (+ author), or null. */
+export async function findBookByTitle(title: string, author: string | null, fetchImpl: FetchImpl = fetch): Promise<string | null> {
+  const params = new URLSearchParams({ title, limit: '1', fields: 'key' });
+  if (author) params.set('author', author);
+  const json = (await getJson(`${OL}/search.json?${params}`, 'books', OL_HEADERS, fetchImpl)) as { docs?: Array<{ key?: string }> };
+  return olWorkId(json?.docs?.[0]?.key);
+}
