@@ -1,7 +1,7 @@
 # Lobby — Documento de design
 
 **Data:** 2026-11-14
-**Status:** aguardando aprovação
+**Status:** aprovado
 
 ## 1. Intenção e o porquê
 
