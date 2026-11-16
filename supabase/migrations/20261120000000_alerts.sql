@@ -96,3 +96,23 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke execute on function mark_notifications_read(), unread_count() from public, anon;
 grant execute on function mark_notifications_read(), unread_count() to authenticated;
+
+-- Obras que a tarefa diária ainda precisa conferir hoje (estão na lista de alguém).
+create function due_works(p_today date, p_limit int)
+returns table (id uuid, kind work_kind, external_id text)
+language sql stable security definer set search_path = public as $$
+  select w.id, w.kind, w.external_id from works w
+  where exists (select 1 from list_items li where li.work_id = w.id)
+    and (w.checked_on is null or w.checked_on < p_today)
+  order by w.checked_on nulls first, w.id
+  limit p_limit;
+$$;
+
+create function due_works_count(p_today date) returns int
+language sql stable security definer set search_path = public as $$
+  select count(*)::int from works w
+  where exists (select 1 from list_items li where li.work_id = w.id)
+    and (w.checked_on is null or w.checked_on < p_today);
+$$;
+revoke execute on function due_works(date, int), due_works_count(date) from public, anon, authenticated;
+grant execute on function due_works(date, int), due_works_count(date) to service_role;

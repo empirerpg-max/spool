@@ -95,4 +95,13 @@ describe.skipIf(!hasDb)('alerts', () => {
     expect(await asUser(ana, 'select e.title from notifications n join events e on e.id = n.event_id')).toEqual([{ title: 'Matrix estreou' }]);
     expect(await asUser(ana, 'select title from events')).toEqual([{ title: 'Matrix estreou' }]);
   });
+
+  it('due works are those in some list not checked today', async () => {
+    await list(ana, movie, 'quero');
+    await list(bia, series, 'concluido');
+    await asSuperuser("update works set checked_on = '2026-11-16' where id = $1", [series]);
+    expect(await asServiceRole("select id from due_works('2026-11-16', 10)")).toEqual([{ id: movie }]);
+    expect(await asServiceRole("select due_works_count('2026-11-16') as n")).toEqual([{ n: 1 }]);
+    await expectDbError(asUser(ana, "select * from due_works('2026-11-16', 10)"), /permission denied/);
+  });
 });
