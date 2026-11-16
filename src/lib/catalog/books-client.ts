@@ -17,10 +17,15 @@ async function optional<T>(p: Promise<T>): Promise<T | null> {
   }
 }
 
-async function googleBooks(q: string, extra: Record<string, string>, fetchImpl: FetchImpl): Promise<unknown | null> {
+/** Raw Google Books volume search; throws CatalogUnavailableError when Google is down. */
+export async function searchGoogleBooks(q: string, extra: Record<string, string>, fetchImpl: FetchImpl = fetch): Promise<unknown> {
   const params = new URLSearchParams({ q, ...extra });
   if (process.env.GOOGLE_BOOKS_API_KEY) params.set('key', process.env.GOOGLE_BOOKS_API_KEY);
-  return optional(getJson(`${GB}?${params}`, 'books', { Accept: 'application/json' }, fetchImpl));
+  return getJson(`${GB}?${params}`, 'books', { Accept: 'application/json' }, fetchImpl);
+}
+
+function googleBooks(q: string, extra: Record<string, string>, fetchImpl: FetchImpl): Promise<unknown | null> {
+  return optional(searchGoogleBooks(q, extra, fetchImpl));
 }
 
 const fold = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
