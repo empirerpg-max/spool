@@ -13,7 +13,7 @@ export function ReplyForm({ action }: { action: (prev: ActionState, fd: FormData
     <form ref={form} action={formAction} className="space-y-3">
       <label className="block space-y-1">
         <span className="text-sm font-medium">Sua resposta</span>
-        <textarea name="body" required maxLength={10000} rows={4} className="w-full rounded-lg border border-line bg-transparent px-3 py-2" />
+        <textarea name="body" required maxLength={10000} rows={4} className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2" />
       </label>
       <label className="flex items-center gap-2">
         <input type="checkbox" name="hasSpoiler" />

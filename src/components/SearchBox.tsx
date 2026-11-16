@@ -7,7 +7,7 @@ export function SearchBox({ defaultValue, compact = false }: { defaultValue?: st
         defaultValue={defaultValue}
         placeholder="Busque filmes, séries e livros"
         aria-label="Buscar"
-        className={`min-w-0 flex-1 rounded-full border border-line bg-surface px-4 text-fg placeholder:text-muted ${compact ? 'py-1.5 text-sm' : 'py-2.5'}`}
+        className={`min-w-0 flex-1 rounded-full border border-line-strong bg-surface px-4 text-fg placeholder:text-muted ${compact ? 'py-1.5 text-sm' : 'py-2.5'}`}
       />
       {!compact && (
         <button type="submit" className="rounded-full bg-fg px-5 py-2.5 font-semibold text-bg">

@@ -22,3 +22,19 @@ describe('Saguão palette', () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe('Saguão accessibility rules', () => {
+  const css = readFileSync(path.resolve(SRC, 'app/globals.css'), 'utf8');
+
+  it('the focus ring does not reshape elements', () => {
+    const rule = css.match(/:focus-visible\s*\{[^}]*\}/)?.[0] ?? '';
+    expect(rule).toContain('outline');
+    expect(rule).not.toContain('border-radius');
+  });
+
+  it('form fields have a visible surface and a 3:1 border (no transparent fields)', () => {
+    expect(css).toContain('--color-line-strong: #7d6f96');
+    const offenders = files(SRC).filter((f) => /<(?:input|textarea)[^>]*bg-transparent/.test(readFileSync(f, 'utf8').replace(/\n/g, ' ')));
+    expect(offenders.map((f) => path.relative(SRC, f))).toEqual([]);
+  });
+});

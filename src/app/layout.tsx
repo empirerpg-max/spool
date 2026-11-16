@@ -20,8 +20,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="pt-BR">
       <body className="antialiased">
-        <header className="sticky top-0 z-30 border-b border-line bg-bg/90 px-4 py-3 backdrop-blur">
-          <div className="mx-auto flex max-w-6xl items-center gap-4">
+        <header className="sticky top-0 z-30 h-14 border-b border-line bg-bg/90 px-4 backdrop-blur">
+          <div className="mx-auto flex h-full max-w-6xl items-center gap-4">
             <Logo />
             <div className="hidden max-w-md flex-1 sm:block">
               <SearchBox compact />

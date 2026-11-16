@@ -29,7 +29,7 @@ export function LoginForm({ next, googleEnabled }: { next: string; googleEnabled
       <form action={sendLink} className="space-y-3">
         <label className="block space-y-1">
           <span className="text-sm">E-mail</span>
-          <input name="email" type="email" required autoComplete="email" className="w-full rounded-lg border border-line bg-transparent px-3 py-2" />
+          <input name="email" type="email" required autoComplete="email" className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2" />
         </label>
         <button type="submit" disabled={status === 'sending'} className="w-full rounded-lg bg-fg px-4 py-2 font-semibold text-bg disabled:opacity-60">
           Receber link de acesso

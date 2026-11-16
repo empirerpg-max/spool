@@ -13,7 +13,7 @@ export function UsernameForm({ next, current }: { next: string; current: string 
         <div className="flex items-center gap-1">
           <span className="text-muted">@</span>
           <input name="username" defaultValue={current ?? ''} required minLength={3} maxLength={20} autoComplete="username"
-            className="w-full rounded-lg border border-line bg-transparent px-3 py-2" />
+            className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2" />
         </div>
         <span className="text-xs text-muted">3 a 20 letras minúsculas, números ou _</span>
       </label>

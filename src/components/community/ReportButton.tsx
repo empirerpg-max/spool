@@ -26,7 +26,7 @@ export function ReportButton({ topicId, postId }: { topicId?: string; postId?: s
             {label}
           </label>
         ))}
-        <textarea name="note" maxLength={500} rows={2} placeholder="Detalhes (opcional)" className="w-full rounded border border-line bg-transparent px-2 py-1" />
+        <textarea name="note" maxLength={500} rows={2} placeholder="Detalhes (opcional)" className="w-full rounded border border-line-strong bg-surface px-2 py-1" />
         {state.error && <p role="alert" className="text-danger">{state.error}</p>}
         <button type="submit" disabled={pending} className="rounded bg-danger px-3 py-1 font-semibold text-bg disabled:opacity-60">Denunciar</button>
       </form>

@@ -28,12 +28,12 @@ function ReviewForm({ kind, workId, workPath, item }: { kind: WorkKind; workId: 
       {err.rating && <p role="alert" className="text-sm text-danger">{err.rating}</p>}
       <label className="block space-y-1">
         <span className="text-sm font-medium">{kind === 'book' ? 'Quando terminou de ler' : 'Quando assistiu'}</span>
-        <input type="date" name="finishedOn" defaultValue={item.finishedOn ?? ''} className="rounded-lg border border-line bg-transparent px-3 py-1.5" />
+        <input type="date" name="finishedOn" defaultValue={item.finishedOn ?? ''} className="rounded-lg border border-line-strong bg-surface px-3 py-1.5" />
       </label>
       {err.finishedOn && <p role="alert" className="text-sm text-danger">{err.finishedOn}</p>}
       <label className="block space-y-1">
         <span className="text-sm font-medium">Resenha</span>
-        <textarea name="review" rows={5} maxLength={10000} defaultValue={item.review ?? ''} className="w-full rounded-lg border border-line bg-transparent px-3 py-2" />
+        <textarea name="review" rows={5} maxLength={10000} defaultValue={item.review ?? ''} className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2" />
       </label>
       <label className="flex items-center gap-2">
         <input type="checkbox" name="reviewHasSpoiler" defaultChecked={item.reviewHasSpoiler} />
@@ -85,7 +85,7 @@ export function ListControls({ kind, workId, workPath, item, signedIn, hasUserna
                 onClick={(e) => {
                   if (!current && s !== 'concluido' && item?.status === 'concluido' && hasReviewData && !window.confirm(CLEAR_WARNING)) e.preventDefault();
                 }}
-                className={`rounded-full border px-4 py-1.5 text-sm ${current ? 'border-fg bg-fg font-semibold text-bg' : 'border-line bg-bg/60 text-fg hover:border-muted'}`}
+                className={`rounded-full border px-4 py-1.5 text-sm ${current ? 'border-fg bg-fg font-semibold text-bg' : 'border-line-strong bg-bg/60 text-fg hover:border-fg'}`}
               >
                 {statusLabel(kind, s)}
               </button>

@@ -3,7 +3,7 @@
 import { useActionState } from 'react';
 import type { ActionState } from '@/lib/community/actions';
 
-const input = 'w-full rounded-lg border border-line bg-surface px-3 py-2 text-fg';
+const input = 'w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-fg';
 
 export function TopicForm({ action, isSeries }: { action: (prev: ActionState, fd: FormData) => Promise<ActionState>; isSeries: boolean }) {
   const [state, formAction, pending] = useActionState(action, {});
