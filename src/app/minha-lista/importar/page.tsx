@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: 'Importar · Minha lista · Lobby' };
 export const maxDuration = 60;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const card = 'space-y-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800';
+const card = 'space-y-3 rounded-xl border border-line bg-surface p-5';
 
 async function NotFoundList({ importId }: { importId: string }) {
   const supabase = await createSessionClient();
@@ -23,12 +23,12 @@ async function NotFoundList({ importId }: { importId: string }) {
   return (
     <section className="space-y-2">
       <h2 className="text-lg font-semibold">Não encontramos estes itens</h2>
-      <p className="text-sm text-neutral-500">Busque cada um e adicione à sua lista manualmente.</p>
+      <p className="text-sm text-muted">Busque cada um e adicione à sua lista manualmente.</p>
       <ul className="space-y-1">
         {rows.map(({ id, row }) => (
           <li key={id}>
             <Link href={`/busca?q=${encodeURIComponent(row.title)}`} className="underline">{row.title}</Link>
-            <span className="text-neutral-500"> {[row.year, row.author].filter(Boolean).join(' · ')}</span>
+            <span className="text-muted"> {[row.year, row.author].filter(Boolean).join(' · ')}</span>
           </li>
         ))}
       </ul>
@@ -60,7 +60,7 @@ export default async function ImportPage({ searchParams }: { searchParams: Promi
     <section className="space-y-6">
       <p className="text-sm"><Link href="/minha-lista" className="underline">← Minha lista</Link></p>
       <h1 className="text-2xl font-bold">Importar sua lista</h1>
-      <p className="text-neutral-500">Suas notas e resenhas chegam como privadas. Nada é publicado na comunidade sem você escolher.</p>
+      <p className="text-muted">Suas notas e resenhas chegam como privadas. Nada é publicado na comunidade sem você escolher.</p>
       <div className="grid gap-4 md:grid-cols-2">
         <div className={card}>
           <h2 className="text-lg font-semibold">Letterboxd</h2>

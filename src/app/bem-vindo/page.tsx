@@ -14,7 +14,7 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
   return (
     <section className="space-y-6 py-8">
       <h1 className="text-center text-2xl font-bold">Escolha seu nome de usuário</h1>
-      <p className="text-center text-neutral-500">É assim que as pessoas vão te ver nas comunidades.</p>
+      <p className="text-center text-muted">É assim que as pessoas vão te ver nas comunidades.</p>
       <UsernameForm next={next} current={user.username} />
     </section>
   );

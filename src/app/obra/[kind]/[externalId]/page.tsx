@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import { AvailabilityList } from '@/components/work/AvailabilityList';
 import { Trailer } from '@/components/work/Trailer';
+import { WorkHero } from '@/components/work/WorkHero';
+import { SectionNav } from '@/components/work/SectionNav';
 import { CommunitySection } from '@/components/community/CommunitySection';
 import { ListControls } from '@/components/list/ListControls';
 import { getListItem } from '@/lib/list/queries';
 import { cinemaStatus } from '@/lib/catalog/cinema';
 import { getCurrentUser } from '@/lib/auth/current-user';
-import { listTopics } from '@/lib/community/queries';
+import { countTopics, listTopics } from '@/lib/community/queries';
 import { loadWork as load } from './load';
 
 type Params = Promise<{ kind: string; externalId: string }>;
@@ -18,6 +20,16 @@ async function listItem(workId: string | null, signedIn: boolean) {
   } catch (e) {
     console.error('[list] get failed', e);
     return null;
+  }
+}
+
+async function topicTotal(workId: string | null) {
+  if (!workId) return 0;
+  try {
+    return await countTopics(workId);
+  } catch (e) {
+    console.error('[community] count failed', e);
+    return 0;
   }
 }
 
@@ -45,81 +57,85 @@ export default async function WorkPage({ params, searchParams }: { params: Param
   const page = Math.max(1, Number((await searchParams).pagina) || 1);
   const result = await load(kind, externalId);
   if (!result) {
-    return <p role="status" className="py-16 text-center text-amber-600">Não foi possível carregar esta obra agora. Tente de novo em instantes.</p>;
+    return <p role="status" className="py-16 text-center text-warn">Não foi possível carregar esta obra agora. Tente de novo em instantes.</p>;
   }
   const { work, stale } = result;
-  const [topics, user] = await Promise.all([community(result.id, page), getCurrentUser()]);
+  const [topics, topicCount, user] = await Promise.all([community(result.id, page), topicTotal(result.id), getCurrentUser()]);
   const item = await listItem(result.id, Boolean(user));
   const cinema = work.kind === 'movie' ? cinemaStatus(work, todaySaoPaulo()) : null;
-  const year = work.releaseDateBR?.slice(0, 4);
+  const sectionTitle = 'font-display text-2xl font-bold';
+
+  const badge = cinema === 'em_cartaz'
+    ? <span className="rounded-full bg-film/20 px-2.5 py-0.5 text-xs font-bold text-film">Nos cinemas</span>
+    : cinema === 'em_breve' && work.theatricalDateBR
+      ? <span className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-semibold text-muted">Em breve nos cinemas · {brDate(work.theatricalDateBR)}</span>
+      : null;
 
   return (
-    <article className="space-y-8">
-      <div className="flex flex-col gap-6 sm:flex-row">
-        {work.posterUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={work.posterUrl} alt={`Capa de ${work.title}`} width={200} height={300} className="w-40 self-start rounded-lg sm:w-52" />
-        ) : (
-          <div className="flex h-60 w-40 items-center justify-center rounded-lg bg-neutral-200 text-neutral-500 dark:bg-neutral-800">Sem capa</div>
-        )}
-        <div className="space-y-3">
-          <h1 className="text-3xl font-bold">
-            {work.title} {year && <span className="font-normal text-neutral-500">({year})</span>}
-          </h1>
-          {work.originalTitle && <p className="text-neutral-500">{work.originalTitle}</p>}
-          {cinema === 'em_cartaz' && <span className="inline-block rounded-full bg-amber-400 px-3 py-1 text-sm font-medium text-black">Nos cinemas</span>}
-          {cinema === 'em_breve' && work.theatricalDateBR && (
-            <span className="inline-block rounded-full bg-neutral-200 px-3 py-1 text-sm dark:bg-neutral-800">Em breve nos cinemas · {brDate(work.theatricalDateBR)}</span>
-          )}
-          {work.overview ? (
-            <div className="space-y-1">
-              {work.overviewLang === 'en' && <p className="text-xs uppercase text-neutral-500">Sinopse em inglês</p>}
-              <p>{work.overview}</p>
-            </div>
-          ) : (
-            <p className="text-neutral-500">Sinopse indisponível</p>
-          )}
-          {work.people.length > 0 && (
-            <p><span className="font-medium">{work.kind === 'book' ? 'Autoria' : 'Elenco'}:</span> {work.people.join(', ')}</p>
-          )}
-          {stale && <p className="text-xs text-neutral-500">Dados podem estar desatualizados</p>}
+    <article className="space-y-6">
+      <WorkHero work={work} topicCount={topics ? topicCount : null} badge={badge}>
+        <ListControls
+          kind={work.kind}
+          workId={result.id}
+          workPath={result.path}
+          item={item}
+          signedIn={Boolean(user)}
+          hasUsername={Boolean(user?.username)}
+        />
+      </WorkHero>
+
+      <SectionNav items={[{ id: 'comunidade', label: 'Comunidade' }, { id: 'sobre', label: 'Sobre' }, { id: 'onde-assistir', label: work.kind === 'book' ? 'Onde comprar' : 'Onde assistir' }]} />
+
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-12">
+          <section id="comunidade" className="scroll-mt-32">
+            <CommunitySection
+              workId={topics ? result.id : null}
+              workPath={result.path}
+              topics={topics?.topics ?? []}
+              hasMore={topics?.hasMore ?? false}
+              page={page}
+              signedIn={Boolean(user)}
+            />
+          </section>
+
+          <section id="sobre" className="scroll-mt-32 space-y-4">
+            <h2 className={sectionTitle}>Sobre</h2>
+            {work.overview ? (
+              <div className="max-w-prose space-y-1">
+                {work.overviewLang === 'en' && <p className="text-xs font-semibold uppercase tracking-wider text-muted">Sinopse em inglês</p>}
+                <p className="leading-relaxed">{work.overview}</p>
+              </div>
+            ) : (
+              <p className="text-muted">Sinopse indisponível</p>
+            )}
+            {work.people.length > 0 && (
+              <p><span className="font-semibold">{work.kind === 'book' ? 'Autoria' : 'Elenco'}:</span> <span className="text-muted">{work.people.join(', ')}</span></p>
+            )}
+            {work.seasons.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="font-display text-lg font-bold">Temporadas</h3>
+                <ul className="divide-y divide-line rounded-xl border border-line bg-surface">
+                  {work.seasons.map((s) => (
+                    <li key={s.number} className="flex flex-wrap justify-between gap-2 px-4 py-2.5">
+                      <span className="font-semibold">Temporada {s.number}</span>
+                      <span className="text-muted">{s.episodeCount} episódios{s.airDate && ` · ${brDate(s.airDate)}`}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {stale && <p className="text-xs text-muted">Dados podem estar desatualizados</p>}
+          </section>
         </div>
+
+        <aside className="min-w-0 space-y-8">
+          <section id="onde-assistir" className="scroll-mt-32">
+            <AvailabilityList kind={work.kind} items={work.availability} />
+          </section>
+          <Trailer youtubeKey={work.trailerYoutubeKey} title={work.title} />
+        </aside>
       </div>
-
-      <ListControls
-        kind={work.kind}
-        workId={result.id}
-        workPath={result.path}
-        item={item}
-        signedIn={Boolean(user)}
-        hasUsername={Boolean(user?.username)}
-      />
-
-      <Trailer youtubeKey={work.trailerYoutubeKey} />
-
-      {work.seasons.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-xl font-semibold">Temporadas</h2>
-          <ul className="space-y-1">
-            {work.seasons.map((s) => (
-              <li key={s.number}>
-                Temporada {s.number} · {s.episodeCount} episódios{s.airDate && ` · estreia ${brDate(s.airDate)}`}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <AvailabilityList kind={work.kind} items={work.availability} />
-
-      <CommunitySection
-        workId={topics ? result.id : null}
-        workPath={result.path}
-        topics={topics?.topics ?? []}
-        hasMore={topics?.hasMore ?? false}
-        page={page}
-        signedIn={Boolean(user)}
-      />
     </article>
   );
 }

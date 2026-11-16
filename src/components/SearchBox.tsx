@@ -1,4 +1,4 @@
-export function SearchBox({ defaultValue }: { defaultValue?: string }) {
+export function SearchBox({ defaultValue, compact = false }: { defaultValue?: string; compact?: boolean }) {
   return (
     <form action="/busca" method="get" role="search" className="flex w-full gap-2">
       <input
@@ -7,11 +7,13 @@ export function SearchBox({ defaultValue }: { defaultValue?: string }) {
         defaultValue={defaultValue}
         placeholder="Busque filmes, séries e livros"
         aria-label="Buscar"
-        className="flex-1 rounded-lg border border-neutral-300 bg-transparent px-4 py-2 dark:border-neutral-700"
+        className={`min-w-0 flex-1 rounded-full border border-line-strong bg-surface px-4 text-fg placeholder:text-muted ${compact ? 'py-1.5 text-sm' : 'py-2.5'}`}
       />
-      <button type="submit" className="rounded-lg bg-neutral-900 px-4 py-2 text-white dark:bg-white dark:text-neutral-900">
-        Buscar
-      </button>
+      {!compact && (
+        <button type="submit" className="rounded-full bg-fg px-5 py-2.5 font-semibold text-bg">
+          Buscar
+        </button>
+      )}
     </form>
   );
 }

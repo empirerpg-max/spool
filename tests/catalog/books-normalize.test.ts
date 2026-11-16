@@ -55,6 +55,7 @@ describe('normalizeBook', () => {
     expect(w.isbns).toEqual(isbns);
     expect(w.availability).toContainEqual({ provider: 'Google Play Livros', type: 'store', logoUrl: null, link: 'https://play.google.com/store/books/details?id=abc' });
     expect(w.trailerYoutubeKey).toBeNull();
+    expect(w.backdropUrl).toBeNull();
     expect(w.seasons).toEqual([]);
   });
 

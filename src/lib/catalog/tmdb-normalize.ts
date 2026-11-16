@@ -4,6 +4,7 @@ import type { Availability, AvailabilityType, NormalizedWork, SearchHit, Season 
 type Json = any;
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
+const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
 const LOGO_BASE = 'https://image.tmdb.org/t/p/w92';
 
 const PROVIDER_TYPES: Array<[string, AvailabilityType]> = [
@@ -17,6 +18,7 @@ const PROVIDER_TYPES: Array<[string, AvailabilityType]> = [
 const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() !== '' ? v : null);
 const arr = (v: unknown): Json[] => (Array.isArray(v) ? v : []);
 const poster = (path: unknown) => (str(path) ? `${POSTER_BASE}${path}` : null);
+const backdrop = (path: unknown) => (str(path) ? `${BACKDROP_BASE}${path}` : null);
 const yearOf = (date: unknown) => (str(date) ? Number(String(date).slice(0, 4)) || null : null);
 
 function availabilityBR(json: Json): Availability[] {
@@ -76,6 +78,7 @@ export function normalizeTmdbMovie(ptBr: unknown, enOverview: string | null): No
     originalTitle: distinct(str(j?.original_title), title),
     ...overviewOf(j, enOverview),
     posterUrl: poster(j?.poster_path),
+    backdropUrl: backdrop(j?.backdrop_path),
     releaseDateBR: theatricalDateBR ?? str(j?.release_date),
     theatricalDateBR,
     digitalDateBR: earliestBR(j, [4]),
@@ -100,6 +103,7 @@ export function normalizeTmdbTv(ptBr: unknown, enOverview: string | null): Norma
     originalTitle: distinct(str(j?.original_name), title),
     ...overviewOf(j, enOverview),
     posterUrl: poster(j?.poster_path),
+    backdropUrl: backdrop(j?.backdrop_path),
     releaseDateBR: str(j?.first_air_date),
     theatricalDateBR: null,
     digitalDateBR: null,

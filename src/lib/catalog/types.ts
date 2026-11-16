@@ -11,6 +11,8 @@ export interface NormalizedWork {
   overview: string | null;
   overviewLang: 'pt-BR' | 'en' | null;
   posterUrl: string | null;
+  /** Wide image for the page header (TMDB backdrop); null for books. */
+  backdropUrl: string | null;
   /** ISO yyyy-mm-dd; movie: BR theatrical (fallback global), series: first air, book: publish date */
   releaseDateBR: string | null;
   /** movies only */

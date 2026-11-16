@@ -18,7 +18,7 @@ export function CommunitySection({ workId, workPath, topics, hasMore, page, sign
     return (
       <section className="space-y-3">
         <h2 className="text-xl font-semibold">Comunidade</h2>
-        <p className="text-neutral-500">Comunidade indisponível no momento</p>
+        <p className="text-muted">Comunidade indisponível no momento</p>
       </section>
     );
   }
@@ -29,21 +29,21 @@ export function CommunitySection({ workId, workPath, topics, hasMore, page, sign
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Comunidade</h2>
-        <Link href={newTopicHref} className="rounded-lg bg-neutral-900 px-3 py-1.5 text-sm text-white dark:bg-white dark:text-neutral-900">
+        <Link href={newTopicHref} className="rounded-full bg-fg px-4 py-1.5 text-sm font-semibold text-bg">
           Novo tópico
         </Link>
       </div>
       {topics.length === 0 ? (
-        <p className="text-neutral-500">Ninguém começou a conversa ainda. Que tal abrir o primeiro tópico?</p>
+        <p className="text-muted">Ninguém começou a conversa ainda. Que tal abrir o primeiro tópico?</p>
       ) : (
-        <ul className="divide-y divide-neutral-200 dark:divide-neutral-800">
+        <ul className="divide-y divide-line">
           {topics.map((t) => (
             <li key={t.id} className="py-3">
               <div className="flex items-start gap-2">
                 <Link href={`${workPath}/topicos/${t.id}`} className="font-medium hover:underline">{t.title}</Link>
-                {t.hasSpoiler && <span className="rounded bg-amber-200 px-1.5 text-xs text-amber-900">spoiler</span>}
+                {t.hasSpoiler && <span className="rounded bg-warn/20 px-1.5 text-xs font-semibold text-warn">spoiler</span>}
               </div>
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-muted">
                 <span>@{t.author}</span> · <span>{replies(t.replyCount)}</span> · <span>{relativeTime(t.lastActivityAt)}</span>
               </p>
             </li>

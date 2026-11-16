@@ -3,8 +3,8 @@ const TMDB_LOGO =
 
 export function Footer() {
   return (
-    <footer className="mt-16 border-t border-neutral-200 px-4 py-6 text-xs text-neutral-500 dark:border-neutral-800">
-      <div className="mx-auto flex max-w-4xl items-center gap-3">
+    <footer className="mt-16 border-t border-line px-4 py-6 text-xs text-muted">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={TMDB_LOGO} alt="TMDB" width={80} height={10} />
         <p>Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB.</p>

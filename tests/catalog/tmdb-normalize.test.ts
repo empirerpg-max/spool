@@ -23,6 +23,12 @@ describe('normalizeTmdbMovie', () => {
     expect(w.seasons).toEqual([]);
   });
 
+  it('maps the backdrop image', () => {
+    expect(normalizeTmdbMovie(movie603, null).backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/fNG7i7RqMErkcqhohV2a6cV1Ehy.jpg');
+    expect(normalizeTmdbTv(tv1399, null).backdropUrl).toBe('https://image.tmdb.org/t/p/w1280/got-bd.jpg');
+    expect(normalizeTmdbMovie(movieNoBr, null).backdropUrl).toBeNull();
+  });
+
   it('uses earliest BR theatrical (type 2/3) and digital (type 4) dates', () => {
     const w = normalizeTmdbMovie(movie603, null);
     expect(w.theatricalDateBR).toBe('1999-05-14');

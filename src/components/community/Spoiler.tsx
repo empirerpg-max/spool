@@ -8,8 +8,8 @@ export function spoilerLabel(season: number | null, episode: number | null): str
 /** Hidden until clicked; works without JavaScript. */
 export function Spoiler({ label, children }: { label?: string; children: ReactNode }) {
   return (
-    <details className="rounded-lg border border-amber-300 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950/40">
-      <summary className="cursor-pointer text-sm font-medium text-amber-800 dark:text-amber-300">
+    <details className="rounded-lg border border-warn bg-warn/10 p-3">
+      <summary className="cursor-pointer text-sm font-medium text-warn">
         Contém spoiler — clique para ver{label && ` · ${label}`}
       </summary>
       <div className="mt-2">{children}</div>

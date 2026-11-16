@@ -39,10 +39,10 @@ export default async function TopicPage({ params, searchParams }: { params: Para
 
   return (
     <article className="space-y-6">
-      <p className="text-sm text-neutral-500"><Link href={work.path} className="hover:underline">← {work.work.title}</Link></p>
+      <p className="text-sm text-muted"><Link href={work.path} className="hover:underline">← {work.work.title}</Link></p>
       <header className="space-y-1">
         <h1 className="text-2xl font-bold">{topic.title}</h1>
-        <p className="text-sm text-neutral-500">@{topic.author} · {relativeTime(topic.createdAt)}</p>
+        <p className="text-sm text-muted">@{topic.author} · {relativeTime(topic.createdAt)}</p>
       </header>
       {topic.hasSpoiler ? (
         <Spoiler label={spoilerLabel(topic.spoilerSeason, topic.spoilerEpisode)}><Body text={topic.body} /></Spoiler>
@@ -55,8 +55,8 @@ export default async function TopicPage({ params, searchParams }: { params: Para
         <h2 className="text-lg font-semibold">{topic.replyCount === 1 ? '1 resposta' : `${topic.replyCount} respostas`}</h2>
         <ul className="space-y-4">
           {replies.map((r) => (
-            <li key={r.id} className="space-y-1 border-l-2 border-neutral-200 pl-3 dark:border-neutral-800">
-              <p className="text-sm text-neutral-500">@{r.author} · {relativeTime(r.createdAt)}</p>
+            <li key={r.id} className="space-y-1 border-l-2 border-line pl-3">
+              <p className="text-sm text-muted">@{r.author} · {relativeTime(r.createdAt)}</p>
               {r.hasSpoiler ? <Spoiler><Body text={r.body} /></Spoiler> : <Body text={r.body} />}
               {user && <ReportButton postId={r.id} />}
             </li>
@@ -68,7 +68,7 @@ export default async function TopicPage({ params, searchParams }: { params: Para
       {canWrite ? (
         <ReplyForm action={createReply.bind(null, topicPath, topic.id)} />
       ) : user?.banned ? (
-        <p className="text-red-600">Sua conta está suspensa.</p>
+        <p className="text-danger">Sua conta está suspensa.</p>
       ) : user ? (
         <Link href={`/bem-vindo?next=${encodeURIComponent(topicPath)}`} className="underline">Escolha um nome de usuário para responder</Link>
       ) : (

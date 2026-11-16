@@ -75,3 +75,12 @@ export async function getTopicWithReplies(
     hasMore: replies.length > REPLIES_PER_PAGE,
   };
 }
+
+/** Live topics in a work's community (removed ones are hidden by RLS). */
+export async function countTopics(workId: string): Promise<number> {
+  if (!supabaseConfigured()) return 0;
+  const supabase = await createSessionClient();
+  const { count, error } = await supabase.from('topics').select('id', { count: 'exact', head: true }).eq('work_id', workId);
+  if (error) throw new Error(`Supabase: ${error.message}`);
+  return count ?? 0;
+}

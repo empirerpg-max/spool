@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { Stars } from '@/components/list/StarRating';
+import { ListCard } from '@/components/list/ListCard';
 import { getCurrentUser } from '@/lib/auth/current-user';
-import { workPath } from '@/lib/catalog/kind';
 import type { WorkKind } from '@/lib/catalog/types';
 import { listMyItems } from '@/lib/list/queries';
 import { LIST_STATUSES, statusLabel, type ListStatus } from '@/lib/list/types';
@@ -24,7 +23,7 @@ function href(kind: WorkKind | undefined, status: ListStatus | undefined) {
 }
 
 const chip = (active: boolean) =>
-  `rounded-full border px-3 py-1 text-sm ${active ? 'border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900' : 'border-neutral-300 dark:border-neutral-700'}`;
+  `rounded-full border px-3 py-1 text-sm ${active ? 'border-fg bg-fg text-bg' : 'border-line text-muted hover:text-fg'}`;
 
 export default async function MyListPage({ searchParams }: { searchParams: Promise<{ tipo?: string; estado?: string }> }) {
   const user = await getCurrentUser();
@@ -37,7 +36,7 @@ export default async function MyListPage({ searchParams }: { searchParams: Promi
   return (
     <section className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-2xl font-bold">Minha lista</h1>
+        <h1 className="font-display text-3xl font-extrabold">Minha lista</h1>
         <Link href="/minha-lista/importar" className="text-sm underline">Importar do Letterboxd ou Goodreads</Link>
       </div>
       <nav aria-label="Tipo" className="flex flex-wrap gap-2">
@@ -47,23 +46,15 @@ export default async function MyListPage({ searchParams }: { searchParams: Promi
         {STATES.map(([s, label]) => <Link key={label} href={href(kind, s)} aria-current={s === status ? 'page' : undefined} className={chip(s === status)}>{label}</Link>)}
       </nav>
       {entries.length === 0 ? (
-        <p className="text-neutral-500">
+        <p className="text-muted">
           Sua lista está vazia. <Link href="/" className="underline">Busque um filme, série ou livro para começar.</Link>
         </p>
       ) : (
-        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+        <ul className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {entries.map((e) => (
             <li key={e.workId}>
-              <Link href={workPath(e.work.kind, e.work.externalId)} className="block space-y-1">
-                {e.work.posterUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={e.work.posterUrl} alt="" className="aspect-[2/3] w-full rounded-lg object-cover" loading="lazy" />
-                ) : (
-                  <div className="flex aspect-[2/3] w-full items-center justify-center rounded-lg bg-neutral-200 text-sm text-neutral-500 dark:bg-neutral-800">Sem capa</div>
-                )}
-                <p className="font-medium leading-tight">{e.work.title}{e.work.year && <span className="font-normal text-neutral-500"> ({e.work.year})</span>}</p>
-                <p className="text-sm text-neutral-500">{statusLabel(e.work.kind, e.status)}{e.rating !== null && <> · <Stars value={e.rating} /></>}</p>
-              </Link>
+              <ListCard kind={e.work.kind} externalId={e.work.externalId} title={e.work.title} year={e.work.year}
+                posterUrl={e.work.posterUrl} statusText={statusLabel(e.work.kind, e.status)} rating={e.rating} />
             </li>
           ))}
         </ul>

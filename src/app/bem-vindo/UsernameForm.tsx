@@ -11,14 +11,14 @@ export function UsernameForm({ next, current }: { next: string; current: string 
       <label className="block space-y-1">
         <span className="text-sm">Nome de usuário</span>
         <div className="flex items-center gap-1">
-          <span className="text-neutral-500">@</span>
+          <span className="text-muted">@</span>
           <input name="username" defaultValue={current ?? ''} required minLength={3} maxLength={20} autoComplete="username"
-            className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700" />
+            className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2" />
         </div>
-        <span className="text-xs text-neutral-500">3 a 20 letras minúsculas, números ou _</span>
+        <span className="text-xs text-muted">3 a 20 letras minúsculas, números ou _</span>
       </label>
-      {state.error && <p role="alert" className="text-red-600">{state.error}</p>}
-      <button type="submit" disabled={pending} className="w-full rounded-lg bg-neutral-900 px-4 py-2 text-white disabled:opacity-60 dark:bg-white dark:text-neutral-900">
+      {state.error && <p role="alert" className="text-danger">{state.error}</p>}
+      <button type="submit" disabled={pending} className="w-full rounded-lg bg-fg px-4 py-2 font-semibold text-bg disabled:opacity-60">
         Salvar
       </button>
     </form>

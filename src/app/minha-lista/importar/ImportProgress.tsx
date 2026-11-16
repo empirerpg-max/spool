@@ -42,8 +42,8 @@ export function ImportProgress({ importId, initial }: { importId: string; initia
     <div role="status" className="space-y-2">
       <p>Importando… {done} de {counts.total}</p>
       <progress value={done} max={counts.total} className="w-full" />
-      {paused && <p className="text-sm text-amber-600">O catálogo está demorando para responder. Vamos tentar de novo em instantes.</p>}
-      <p className="text-sm text-neutral-500">Pode fechar esta página: quando voltar, continuamos de onde parou.</p>
+      {paused && <p className="text-sm text-warn">O catálogo está demorando para responder. Vamos tentar de novo em instantes.</p>}
+      <p className="text-sm text-muted">Pode fechar esta página: quando voltar, continuamos de onde parou.</p>
     </div>
   );
 }
