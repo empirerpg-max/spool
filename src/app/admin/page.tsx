@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { resolveReport } from '@/lib/admin/actions';
+import { AdminNav } from '@/components/admin/AdminNav';
 import { requireAdmin } from '@/lib/admin/guard';
 import { workPath } from '@/lib/catalog/kind';
 import type { WorkKind } from '@/lib/catalog/types';
@@ -48,7 +49,7 @@ export default async function AdminReportsPage() {
 
   return (
     <section className="space-y-6">
-      <nav className="flex gap-4 text-sm"><span className="font-semibold">Denúncias</span><Link href="/admin/dominios" className="underline">Domínios bloqueados</Link></nav>
+      <AdminNav current="/admin" />
       <h1 className="text-2xl font-bold">Denúncias abertas</h1>
       {reports.length === 0 && <p className="text-muted">Nenhuma denúncia aberta</p>}
       <ul className="space-y-4">

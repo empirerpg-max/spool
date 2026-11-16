@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { AddDomainForm } from './AddDomainForm';
+import { AdminNav } from '@/components/admin/AdminNav';
 import { removeBlockedDomain } from '@/lib/admin/actions';
 import { requireAdmin } from '@/lib/admin/guard';
 import { createSessionClient } from '@/lib/supabase/session';
@@ -15,7 +15,7 @@ export default async function BlockedDomainsPage() {
 
   return (
     <section className="space-y-6">
-      <nav className="flex gap-4 text-sm"><Link href="/admin" className="underline">Denúncias</Link><span className="font-semibold">Domínios bloqueados</span></nav>
+      <AdminNav current="/admin/dominios" />
       <h1 className="text-2xl font-bold">Domínios bloqueados</h1>
       <p className="text-sm text-muted">Links para estes sites (e seus subdomínios) são recusados em tópicos e respostas.</p>
       <AddDomainForm />
