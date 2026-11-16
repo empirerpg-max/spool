@@ -169,3 +169,15 @@ Todo dia de manhã o GitHub pede ao site para conferir as obras das listas e cri
 4. **Teste:** GitHub → **Actions** → **Avisos diários** → **Run workflow**. Deve terminar com ✅ e "Tudo conferido.".
 
 As **notificações no celular** não precisam de nenhuma chave sua: o site cria as próprias chaves na primeira vez. Cada pessoa ativa em **Avisos → Ativar avisos no celular**. No iPhone, é preciso antes adicionar o Lobby à tela de início.
+
+## 10. Fotos de perfil
+
+Não precisa configurar nada: a pasta onde ficam as fotos de perfil (chamada `avatars`) é criada sozinha pela automação do banco (passo 6), na próxima vez que ela rodar.
+
+**Só se** alguém tentar trocar a foto em **Minha conta** e aparecer a mensagem *"Não foi possível guardar a foto agora. Tente de novo em alguns minutos."* mais de uma vez, crie a pasta à mão:
+
+1. Supabase → menu da esquerda → **Storage** → **New bucket**.
+2. Nome: `avatars` (exatamente assim, tudo minúsculo).
+3. Ligue a opção **Public bucket** (as fotos de perfil são vistas pelos membros do clube).
+4. **Save** (ou **Create bucket**). Não precisa mexer em mais nada.
+5. Tente trocar a foto de novo.
