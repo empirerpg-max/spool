@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
-  bookCandidates, cachedFetch, loadReleases, nowPlaying, seriesOnAir, tmdbMovies, tmdbSeries, trending, upcoming, bookReleases,
+  bookCandidates, cachedFetch, loadNowPlaying, loadReleases, nowPlaying, seriesOnAir, tmdbMovies, tmdbSeries, trending, upcoming, bookReleases,
   type ReleaseItem,
 } from '@/lib/home/releases';
 import { workPath } from '@/lib/catalog/kind';
@@ -126,6 +126,15 @@ describe('loadReleases', () => {
     expect(r.upcoming).toBeNull();
     expect(r.series).toBeNull();
     expect(r.books).toBeNull();
+  });
+});
+
+describe('loadNowPlaying', () => {
+  it('gives null instead of failing the signed-out home', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(await loadNowPlaying(fakeFetch([{ match: /now_playing/, status: 500 }]))).toBeNull();
+    spy.mockRestore();
+    expect(await loadNowPlaying(fakeFetch([{ match: /now_playing/, body: { results: [movie(7)] } }]))).toHaveLength(1);
   });
 });
 

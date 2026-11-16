@@ -169,6 +169,11 @@ export async function loadReleases(today: string, fetchImpl?: FetchImpl): Promis
   return { nowPlaying: np, upcoming: up, series, books: bk };
 }
 
+/** Only the films in theatres (signed-out home); null when TMDB is unavailable. */
+export function loadNowPlaying(fetchImpl: FetchImpl = cachedFetch(RELEASES_REVALIDATE_S)): Promise<ReleaseItem[] | null> {
+  return settle('now playing', nowPlaying(fetchImpl));
+}
+
 const QUOTA: Array<[WorkKind, number]> = [['movie', 3], ['series', 3], ['book', 2]];
 export const TRENDING_SIZE = 8;
 
