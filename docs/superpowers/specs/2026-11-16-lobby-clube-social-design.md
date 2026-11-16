@@ -1,7 +1,7 @@
 # Lobby — Clube social, telas iniciais e avaliações
 
 **Data:** 2026-11-16
-**Status:** aguardando aprovação
+**Status:** aprovado
 
 ## 1. Intenção e o porquê
 
