@@ -3,7 +3,7 @@
 import { useActionState } from 'react';
 import type { ActionState } from '@/lib/community/actions';
 
-const input = 'w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 dark:border-neutral-700';
+const input = 'w-full rounded-lg border border-line bg-surface px-3 py-2 text-fg';
 
 export function TopicForm({ action, isSeries }: { action: (prev: ActionState, fd: FormData) => Promise<ActionState>; isSeries: boolean }) {
   const [state, formAction, pending] = useActionState(action, {});
@@ -13,13 +13,13 @@ export function TopicForm({ action, isSeries }: { action: (prev: ActionState, fd
       <label className="block space-y-1">
         <span className="text-sm font-medium">Título</span>
         <input name="title" required minLength={3} maxLength={120} className={input} />
-        <span className="text-xs text-neutral-500">Não coloque spoiler no título.</span>
-        {err.title && <span role="alert" className="block text-sm text-red-600">{err.title}</span>}
+        <span className="text-xs text-muted">Não coloque spoiler no título.</span>
+        {err.title && <span role="alert" className="block text-sm text-danger">{err.title}</span>}
       </label>
       <label className="block space-y-1">
         <span className="text-sm font-medium">Texto</span>
         <textarea name="body" required maxLength={10000} rows={8} className={input} />
-        {err.body && <span role="alert" className="block text-sm text-red-600">{err.body}</span>}
+        {err.body && <span role="alert" className="block text-sm text-danger">{err.body}</span>}
       </label>
       <fieldset className="group space-y-2">
         <label className="flex items-center gap-2">
@@ -38,10 +38,10 @@ export function TopicForm({ action, isSeries }: { action: (prev: ActionState, fd
             </label>
           </div>
         )}
-        {err.spoilerSeason && <span role="alert" className="block text-sm text-red-600">{err.spoilerSeason}</span>}
+        {err.spoilerSeason && <span role="alert" className="block text-sm text-danger">{err.spoilerSeason}</span>}
       </fieldset>
-      {state.error && <p role="alert" className="text-red-600">{state.error}</p>}
-      <button type="submit" disabled={pending} className="rounded-lg bg-neutral-900 px-4 py-2 text-white disabled:opacity-60 dark:bg-white dark:text-neutral-900">
+      {state.error && <p role="alert" className="text-danger">{state.error}</p>}
+      <button type="submit" disabled={pending} className="rounded-lg bg-fg px-4 py-2 font-semibold text-bg disabled:opacity-60">
         Publicar tópico
       </button>
     </form>

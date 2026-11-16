@@ -12,16 +12,16 @@ const GROUPS: Array<[WorkKind, string]> = [['movie', 'Filmes'], ['series', 'Sér
 function Hit({ hit }: { hit: SearchHit }) {
   return (
     <li>
-      <Link href={workPath(hit.kind, hit.externalId)} className="flex items-center gap-3 rounded-lg p-2 hover:bg-neutral-100 dark:hover:bg-neutral-900">
+      <Link href={workPath(hit.kind, hit.externalId)} className="flex items-center gap-3 rounded-lg p-2 hover:bg-surface-2">
         {hit.posterUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={hit.posterUrl} alt="" width={46} height={69} className="h-[69px] w-[46px] rounded object-cover" />
         ) : (
-          <div className="h-[69px] w-[46px] rounded bg-neutral-200 dark:bg-neutral-800" />
+          <div className="h-[69px] w-[46px] rounded bg-surface-2" />
         )}
         <span>
           {hit.title}
-          {hit.year && <span className="text-neutral-500"> ({hit.year})</span>}
+          {hit.year && <span className="text-muted"> ({hit.year})</span>}
         </span>
       </Link>
     </li>
@@ -35,9 +35,9 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   return (
     <div className="space-y-6">
       <SearchBox defaultValue={q} />
-      {unavailable.includes('tmdb') && <p role="status" className="text-amber-600">Filmes e séries indisponíveis no momento</p>}
-      {unavailable.includes('books') && <p role="status" className="text-amber-600">Livros indisponíveis no momento</p>}
-      {q.length >= 2 && hits.length === 0 && unavailable.length === 0 && <p className="text-neutral-500">Nada encontrado para “{q}”</p>}
+      {unavailable.includes('tmdb') && <p role="status" className="text-warn">Filmes e séries indisponíveis no momento</p>}
+      {unavailable.includes('books') && <p role="status" className="text-warn">Livros indisponíveis no momento</p>}
+      {q.length >= 2 && hits.length === 0 && unavailable.length === 0 && <p className="text-muted">Nada encontrado para “{q}”</p>}
       {GROUPS.map(([kind, label]) => {
         const group = hits.filter((h) => h.kind === kind);
         if (!group.length) return null;

@@ -24,7 +24,7 @@ function href(kind: WorkKind | undefined, status: ListStatus | undefined) {
 }
 
 const chip = (active: boolean) =>
-  `rounded-full border px-3 py-1 text-sm ${active ? 'border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900' : 'border-neutral-300 dark:border-neutral-700'}`;
+  `rounded-full border px-3 py-1 text-sm ${active ? 'border-fg bg-fg text-bg' : 'border-line text-muted hover:text-fg'}`;
 
 export default async function MyListPage({ searchParams }: { searchParams: Promise<{ tipo?: string; estado?: string }> }) {
   const user = await getCurrentUser();
@@ -47,7 +47,7 @@ export default async function MyListPage({ searchParams }: { searchParams: Promi
         {STATES.map(([s, label]) => <Link key={label} href={href(kind, s)} aria-current={s === status ? 'page' : undefined} className={chip(s === status)}>{label}</Link>)}
       </nav>
       {entries.length === 0 ? (
-        <p className="text-neutral-500">
+        <p className="text-muted">
           Sua lista está vazia. <Link href="/" className="underline">Busque um filme, série ou livro para começar.</Link>
         </p>
       ) : (
@@ -59,10 +59,10 @@ export default async function MyListPage({ searchParams }: { searchParams: Promi
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={e.work.posterUrl} alt="" className="aspect-[2/3] w-full rounded-lg object-cover" loading="lazy" />
                 ) : (
-                  <div className="flex aspect-[2/3] w-full items-center justify-center rounded-lg bg-neutral-200 text-sm text-neutral-500 dark:bg-neutral-800">Sem capa</div>
+                  <div className="flex aspect-[2/3] w-full items-center justify-center rounded-lg bg-surface-2 text-sm text-muted">Sem capa</div>
                 )}
-                <p className="font-medium leading-tight">{e.work.title}{e.work.year && <span className="font-normal text-neutral-500"> ({e.work.year})</span>}</p>
-                <p className="text-sm text-neutral-500">{statusLabel(e.work.kind, e.status)}{e.rating !== null && <> · <Stars value={e.rating} /></>}</p>
+                <p className="font-medium leading-tight">{e.work.title}{e.work.year && <span className="font-normal text-muted"> ({e.work.year})</span>}</p>
+                <p className="text-sm text-muted">{statusLabel(e.work.kind, e.status)}{e.rating !== null && <> · <Stars value={e.rating} /></>}</p>
               </Link>
             </li>
           ))}

@@ -13,11 +13,11 @@ const REASONS: Array<[string, string]> = [
 
 export function ReportButton({ topicId, postId }: { topicId?: string; postId?: string }) {
   const [state, action, pending] = useActionState<ActionState, FormData>(reportContent, {});
-  if (state.ok) return <p role="status" className="text-xs text-neutral-500">Denúncia enviada. Obrigado!</p>;
+  if (state.ok) return <p role="status" className="text-xs text-muted">Denúncia enviada. Obrigado!</p>;
   return (
     <details className="text-xs">
-      <summary className="cursor-pointer text-neutral-500 hover:underline">Denunciar</summary>
-      <form action={action} className="mt-2 space-y-2 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
+      <summary className="cursor-pointer text-muted hover:underline">Denunciar</summary>
+      <form action={action} className="mt-2 space-y-2 rounded-lg border border-line p-3">
         {topicId && <input type="hidden" name="topicId" value={topicId} />}
         {postId && <input type="hidden" name="postId" value={postId} />}
         {REASONS.map(([value, label]) => (
@@ -26,9 +26,9 @@ export function ReportButton({ topicId, postId }: { topicId?: string; postId?: s
             {label}
           </label>
         ))}
-        <textarea name="note" maxLength={500} rows={2} placeholder="Detalhes (opcional)" className="w-full rounded border border-neutral-300 bg-transparent px-2 py-1 dark:border-neutral-700" />
-        {state.error && <p role="alert" className="text-red-600">{state.error}</p>}
-        <button type="submit" disabled={pending} className="rounded bg-red-600 px-3 py-1 text-white disabled:opacity-60">Denunciar</button>
+        <textarea name="note" maxLength={500} rows={2} placeholder="Detalhes (opcional)" className="w-full rounded border border-line bg-transparent px-2 py-1" />
+        {state.error && <p role="alert" className="text-danger">{state.error}</p>}
+        <button type="submit" disabled={pending} className="rounded bg-danger px-3 py-1 font-semibold text-bg disabled:opacity-60">Denunciar</button>
       </form>
     </details>
   );

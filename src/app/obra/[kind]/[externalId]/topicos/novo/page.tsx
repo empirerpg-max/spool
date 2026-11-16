@@ -17,11 +17,11 @@ export default async function NewTopicPage({ params }: { params: Promise<{ kind:
   const user = await getCurrentUser();
   if (!user) redirect(`/entrar?next=${encodeURIComponent(here)}`);
   if (!user.username) redirect(`/bem-vindo?next=${encodeURIComponent(here)}`);
-  if (user.banned) return <p className="py-16 text-center text-red-600">Sua conta está suspensa.</p>;
+  if (user.banned) return <p className="py-16 text-center text-danger">Sua conta está suspensa.</p>;
 
   return (
     <section className="space-y-6">
-      <p className="text-sm text-neutral-500"><Link href={result.path} className="hover:underline">← {result.work.title}</Link></p>
+      <p className="text-sm text-muted"><Link href={result.path} className="hover:underline">← {result.work.title}</Link></p>
       <h1 className="text-2xl font-bold">Novo tópico</h1>
       <TopicForm action={createTopic.bind(null, result.path, result.id)} isSeries={result.work.kind === 'series'} />
     </section>

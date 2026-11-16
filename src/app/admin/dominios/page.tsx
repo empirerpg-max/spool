@@ -17,22 +17,22 @@ export default async function BlockedDomainsPage() {
     <section className="space-y-6">
       <nav className="flex gap-4 text-sm"><Link href="/admin" className="underline">Denúncias</Link><span className="font-semibold">Domínios bloqueados</span></nav>
       <h1 className="text-2xl font-bold">Domínios bloqueados</h1>
-      <p className="text-sm text-neutral-500">Links para estes sites (e seus subdomínios) são recusados em tópicos e respostas.</p>
+      <p className="text-sm text-muted">Links para estes sites (e seus subdomínios) são recusados em tópicos e respostas.</p>
       <AddDomainForm />
       {data?.length ? (
-        <ul className="divide-y divide-neutral-200 dark:divide-neutral-800">
+        <ul className="divide-y divide-line">
           {data.map(({ domain }) => (
             <li key={domain} className="flex items-center justify-between py-2">
               <span>{domain}</span>
               <form action={removeBlockedDomain}>
                 <input type="hidden" name="domain" value={domain} />
-                <button type="submit" className="text-sm text-red-600 hover:underline">Remover</button>
+                <button type="submit" className="text-sm text-danger hover:underline">Remover</button>
               </form>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-neutral-500">Nenhum domínio bloqueado ainda.</p>
+        <p className="text-muted">Nenhum domínio bloqueado ainda.</p>
       )}
     </section>
   );

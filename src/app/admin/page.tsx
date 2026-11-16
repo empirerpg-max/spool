@@ -29,7 +29,7 @@ function Button({ reportId, action, children, danger }: { reportId: string; acti
     <form action={resolveReport}>
       <input type="hidden" name="reportId" value={reportId} />
       <input type="hidden" name="action" value={action} />
-      <button type="submit" className={`rounded px-3 py-1 text-sm ${danger ? 'bg-red-600 text-white' : 'border border-neutral-300 dark:border-neutral-700'}`}>{children}</button>
+      <button type="submit" className={`rounded px-3 py-1 text-sm ${danger ? 'bg-danger font-semibold text-bg' : 'border border-line'}`}>{children}</button>
     </form>
   );
 }
@@ -50,7 +50,7 @@ export default async function AdminReportsPage() {
     <section className="space-y-6">
       <nav className="flex gap-4 text-sm"><span className="font-semibold">Denúncias</span><Link href="/admin/dominios" className="underline">Domínios bloqueados</Link></nav>
       <h1 className="text-2xl font-bold">Denúncias abertas</h1>
-      {reports.length === 0 && <p className="text-neutral-500">Nenhuma denúncia aberta</p>}
+      {reports.length === 0 && <p className="text-muted">Nenhuma denúncia aberta</p>}
       <ul className="space-y-4">
         {reports.map((r) => {
           const post = one(r.post);
@@ -60,18 +60,18 @@ export default async function AdminReportsPage() {
           const text = (post?.body ?? `${topic?.title ?? ''}\n\n${topic?.body ?? ''}`).slice(0, 300);
           const href = topic && work ? `${workPath(work.kind, work.external_id)}/topicos/${topic.id}` : null;
           return (
-            <li key={r.id} className="space-y-2 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
+            <li key={r.id} className="space-y-2 rounded-lg border border-line p-4">
               <p className="text-sm">
                 <strong>{REASONS[r.reason] ?? r.reason}</strong> · por @{one(r.reporter)?.username ?? '?'} · {relativeTime(r.created_at)} · {post ? 'resposta' : 'tópico'} de @{author}
               </p>
               {r.note && <p className="text-sm italic">“{r.note}”</p>}
-              <blockquote className="whitespace-pre-wrap border-l-2 border-neutral-300 pl-3 text-sm dark:border-neutral-700">{text}</blockquote>
+              <blockquote className="whitespace-pre-wrap border-l-2 border-line pl-3 text-sm">{text}</blockquote>
               {href && <Link href={href} className="text-sm underline">Ver no tópico</Link>}
               <div className="flex flex-wrap items-center gap-2">
                 <Button reportId={r.id} action="remover">Remover</Button>
                 <Button reportId={r.id} action="ignorar">Ignorar</Button>
                 <details>
-                  <summary className="cursor-pointer text-sm text-red-600">Remover e banir autor</summary>
+                  <summary className="cursor-pointer text-sm text-danger">Remover e banir autor</summary>
                   <div className="mt-2 flex items-center gap-2 text-sm">
                     <span>Banir @{author}?</span>
                     <Button reportId={r.id} action="banir" danger>Confirmar</Button>
