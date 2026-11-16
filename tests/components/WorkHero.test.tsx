@@ -7,7 +7,7 @@ const work = (over: Partial<NormalizedWork> = {}): NormalizedWork => ({
   kind: 'series', externalId: '1399', title: 'Game of Thrones', originalTitle: null, overview: null, overviewLang: null,
   posterUrl: 'https://image.tmdb.org/t/p/w500/p.jpg', backdropUrl: 'https://image.tmdb.org/t/p/w1280/b.jpg',
   releaseDateBR: '2011-04-17', theatricalDateBR: null, digitalDateBR: null, trailerYoutubeKey: null,
-  people: [], availability: [], seasons: [], isbns: [], ...over,
+  people: [], availability: [], seasons: [], isbns: [], imdbId: null, ...over,
 });
 
 describe('WorkHero', () => {
@@ -45,5 +45,12 @@ describe('WorkHero', () => {
   it('renders children (the list controls) inside the hero', () => {
     render(<WorkHero work={work()} topicCount={0}><button type="button">Quero ver</button></WorkHero>);
     expect(screen.getByRole('button', { name: 'Quero ver' })).toBeInTheDocument();
+  });
+
+  it('shows the scores between the title and the list controls', () => {
+    render(<WorkHero work={work()} topicCount={0} ratings={<p>Nota do Lobby</p>}><button type="button">Quero ver</button></WorkHero>);
+    const note = screen.getByText('Nota do Lobby');
+    const button = screen.getByRole('button', { name: 'Quero ver' });
+    expect(note.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

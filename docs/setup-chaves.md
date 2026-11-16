@@ -1,6 +1,6 @@
 # Lobby — Passo a passo das chaves de API
 
-São três serviços, todos gratuitos: **TMDB** (filmes e séries), **Google Books** (livros) e **Supabase** (banco de dados).
+São três serviços, todos gratuitos: **TMDB** (filmes e séries), **Google Books** (livros) e **Supabase** (banco de dados). Há ainda um quarto, opcional: **OMDb** (notas do IMDb e Rotten Tomatoes, passo 11).
 
 **Tudo é feito pelo navegador; nada roda no seu computador.** As chaves ficam guardadas, criptografadas, nos painéis dos serviços:
 
@@ -181,3 +181,26 @@ Não precisa configurar nada: a pasta onde ficam as fotos de perfil (chamada `av
 3. Ligue a opção **Public bucket** (as fotos de perfil são vistas pelos membros do clube).
 4. **Save** (ou **Create bucket**). Não precisa mexer em mais nada.
 5. Tente trocar a foto de novo.
+
+## 11. Notas do IMDb e Rotten Tomatoes (OMDb)
+
+As páginas de filmes e séries podem mostrar a nota do **IMDb** e a do **Rotten Tomatoes**. Elas vêm de um serviço gratuito chamado **OMDb**, que precisa de uma chave sua. A **Nota do Lobby** (média das estrelas dos membros) não precisa de nada e já aparece sozinha.
+
+**É opcional:** sem a chave, o site funciona normalmente, só não mostra as notas do IMDb e do Rotten Tomatoes.
+
+1. Abra **omdbapi.com** → no menu de cima, **API Key**.
+2. Marque o plano **FREE** (1.000 consultas por dia), preencha seu e-mail e o resto do formulário → **Submit**.
+3. Abra o e-mail que o OMDb mandou e clique no link de **ativação**. A chave vem nesse mesmo e-mail. **Não cole a chave aqui no chat nem em nenhum outro lugar**: ela vai só na Vercel.
+4. **Vercel** → seu projeto → **Settings** → **Environment Variables** → nova variável:
+   - Nome: `OMDB_API_KEY`
+   - Valor: a chave do e-mail
+   - Tipo **Secret**, ambientes **Production** e **Preview**
+   - **Save**
+5. **Deployments** → `⋯` no mais recente → **Redeploy**.
+6. **Teste:** abra a página de um filme conhecido (por exemplo, Matrix). As notas aparecem abaixo do título. Se não aparecerem logo, recarregue a página depois de alguns segundos.
+
+Bom saber:
+- O site pergunta ao OMDb no máximo uma vez por semana por obra, e a conferência diária usa no máximo 200 consultas por dia. Fica bem abaixo do limite gratuito de 1.000.
+- Se o OMDb estiver fora do ar ou o limite do dia acabar, as páginas continuam abrindo; as notas só voltam a ser atualizadas depois.
+- Livros mostram apenas a Nota do Lobby.
+- A Nota do Lobby só aparece quando a obra tem pelo menos 3 avaliações; antes disso aparece "Poucas avaliações no Lobby ainda". Ninguém consegue ver qual nota cada pessoa deu.

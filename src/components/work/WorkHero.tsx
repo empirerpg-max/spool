@@ -8,6 +8,8 @@ type Props = {
   /** null when the community can't be loaded. */
   topicCount: number | null;
   badge?: ReactNode;
+  /** Lobby / IMDb / Rotten Tomatoes scores. */
+  ratings?: ReactNode;
   children?: ReactNode;
 };
 
@@ -28,7 +30,7 @@ function HeroBackground({ work }: { work: NormalizedWork }) {
   return <div data-hero-bg="gradient" className={`absolute inset-0 ${kindBgClass(work.kind)} opacity-25`} />;
 }
 
-export function WorkHero({ work, topicCount, badge, children }: Props) {
+export function WorkHero({ work, topicCount, badge, ratings, children }: Props) {
   const year = work.releaseDateBR?.slice(0, 4);
   return (
     <section className="relative -mx-4 -mt-6">
@@ -59,6 +61,7 @@ export function WorkHero({ work, topicCount, badge, children }: Props) {
               {topicLabel(topicCount)}
             </a>
           )}
+          {ratings}
           {children}
         </div>
       </div>

@@ -37,6 +37,7 @@ describe('fetchTmdbWork', () => {
     const w = await fetchTmdbWork('series', '1399', f);
     expect(w.kind).toBe('series');
     expect(String(f.mock.calls[0][0])).toContain('aggregate_credits');
+    expect(String(f.mock.calls[0][0])).toContain('external_ids');
   });
 
   it('404 throws WorkNotFoundError', async () => {

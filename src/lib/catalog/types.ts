@@ -27,5 +27,7 @@ export interface NormalizedWork {
   seasons: Season[];
   /** books only, else [] */
   isbns: string[];
+  /** IMDb title id ("tt0133093") from TMDB, used to look up IMDb/Rotten Tomatoes scores; null for books. */
+  imdbId: string | null;
 }
 export interface SearchHit { kind: WorkKind; externalId: string; title: string; year: number | null; posterUrl: string | null; }

@@ -53,6 +53,14 @@ describe('normalizeTmdbMovie', () => {
     expect(none.overviewLang).toBeNull();
   });
 
+  it('captures the IMDb id from the details or external ids, ignoring anything else', () => {
+    expect(normalizeTmdbMovie({ ...movie603, imdb_id: 'tt0133093' }, null).imdbId).toBe('tt0133093');
+    expect(normalizeTmdbMovie({ ...movie603, imdb_id: null, external_ids: { imdb_id: 'tt0133093' } }, null).imdbId).toBe('tt0133093');
+    expect(normalizeTmdbMovie({ ...movie603, imdb_id: '' }, null).imdbId).toBeNull();
+    expect(normalizeTmdbMovie({ ...movie603, imdb_id: 'x&apikey=1' }, null).imdbId).toBeNull();
+    expect(normalizeTmdbMovie(movieNoBr, null).imdbId).toBeNull();
+  });
+
   it('keeps Portuguese overview when present', () => {
     const w = normalizeTmdbMovie(movie603, 'ignored');
     expect(w.overviewLang).toBe('pt-BR');
@@ -60,6 +68,11 @@ describe('normalizeTmdbMovie', () => {
 });
 
 describe('normalizeTmdbTv', () => {
+  it('captures the IMDb id from external ids', () => {
+    expect(normalizeTmdbTv({ ...tv1399, external_ids: { imdb_id: 'tt0944947' } }, null).imdbId).toBe('tt0944947');
+    expect(normalizeTmdbTv(tv1399, null).imdbId).toBeNull();
+  });
+
   it('tv 1399 maps seasons without specials', () => {
     const w = normalizeTmdbTv(tv1399, null);
     expect(w.kind).toBe('series');

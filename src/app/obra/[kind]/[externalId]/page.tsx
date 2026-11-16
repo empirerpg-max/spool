@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { AvailabilityList } from '@/components/work/AvailabilityList';
 import { Trailer } from '@/components/work/Trailer';
 import { WorkHero } from '@/components/work/WorkHero';
+import { Ratings } from '@/components/work/Ratings';
+import { getWorkRatings } from '@/lib/catalog/work-ratings';
 import { SectionNav } from '@/components/work/SectionNav';
 import { CommunitySection } from '@/components/community/CommunitySection';
 import { ListControls } from '@/components/list/ListControls';
@@ -75,7 +77,9 @@ export default async function WorkPage({ params, searchParams }: { params: Param
   }
   const { work, stale } = result;
   const [topics, topicCount, user] = await Promise.all([community(result.id, page), topicTotal(result.id), getCurrentUser()]);
-  const [item, posts] = await Promise.all([listItem(result.id, Boolean(user)), workPosts(result.id, Boolean(user), postsPage)]);
+  const [item, posts, ratings] = await Promise.all([
+    listItem(result.id, Boolean(user)), workPosts(result.id, Boolean(user), postsPage), getWorkRatings(result.id, work.kind),
+  ]);
   const cinema = work.kind === 'movie' ? cinemaStatus(work, todaySaoPaulo()) : null;
   const sectionTitle = 'font-display text-2xl font-bold';
 
@@ -87,7 +91,8 @@ export default async function WorkPage({ params, searchParams }: { params: Param
 
   return (
     <article className="space-y-6">
-      <WorkHero work={work} topicCount={topics ? topicCount : null} badge={badge}>
+      <WorkHero work={work} topicCount={topics ? topicCount : null} badge={badge}
+        ratings={<Ratings kind={work.kind} lobby={ratings.lobby} external={ratings.external} />}>
         <ListControls
           kind={work.kind}
           workId={result.id}

@@ -95,5 +95,6 @@ export function normalizeBook(work: unknown, authors: string[], isbns: string[],
     availability,
     seasons: [],
     isbns,
+    imdbId: null,
   };
 }

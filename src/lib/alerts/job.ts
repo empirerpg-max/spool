@@ -18,6 +18,8 @@ export type JobDeps = {
   markChecked: (workId: string) => Promise<void>;
   /** Counts a failed check; after a few the work waits until tomorrow (so it can't block the queue). */
   noteFailure: (workId: string) => Promise<void>;
+  /** Refreshes the IMDb / Rotten Tomatoes scores of a film or series when due. Optional; failures are ignored. */
+  refreshRatings?: (workId: string) => Promise<void>;
   sendPushes: () => Promise<void>;
   prune: () => Promise<void>;
   now?: () => number;
@@ -44,6 +46,9 @@ export async function runDailyBatch(d: JobDeps): Promise<{ processed: number; ev
       await d.save(after);
       await d.markChecked(w.id);
       processed++;
+      if (d.refreshRatings && w.kind !== 'book' && now() - start < BUDGET_MS) {
+        await d.refreshRatings(w.id).catch((e) => console.error('[alerts] ratings failed', w.id, e));
+      }
     } catch (e) {
       if (e instanceof WorkNotFoundError) {
         await d.markChecked(w.id);

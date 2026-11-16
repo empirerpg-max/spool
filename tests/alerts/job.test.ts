@@ -7,7 +7,7 @@ const TODAY = '2026-11-16';
 const work = (over: Partial<NormalizedWork> = {}): NormalizedWork => ({
   kind: 'movie', externalId: '603', title: 'Matrix', originalTitle: null, overview: null, overviewLang: null,
   posterUrl: null, backdropUrl: null, releaseDateBR: null, theatricalDateBR: null, digitalDateBR: null,
-  trailerYoutubeKey: null, people: [], availability: [], seasons: [], isbns: [], ...over,
+  trailerYoutubeKey: null, people: [], availability: [], seasons: [], isbns: [], imdbId: null, ...over,
 });
 
 function deps(over: Partial<JobDeps> = {}): JobDeps & { checked: string[]; recorded: string[] } {
@@ -91,5 +91,38 @@ describe('runDailyBatch', () => {
       fetchFresh: vi.fn(async () => { t += 25_000; return work(); }),
     });
     expect((await runDailyBatch(d)).processed).toBe(2);
+  });
+
+  it('refreshes external scores of films and series after saving, not of books', async () => {
+    const order: string[] = [];
+    const refreshRatings = vi.fn(async () => { order.push('ratings'); });
+    const d = deps({
+      save: vi.fn(async () => { order.push('save'); }),
+      refreshRatings,
+      dueWorks: vi.fn(async () => [
+        { id: 'w1', kind: 'movie' as const, externalId: '603' },
+        { id: 'w2', kind: 'book' as const, externalId: 'OL1W' },
+        { id: 'w3', kind: 'series' as const, externalId: '1399' },
+      ]),
+    });
+    await runDailyBatch(d);
+    expect(refreshRatings.mock.calls.map((c) => (c as unknown[])[0])).toEqual(['w1', 'w3']);
+    expect(order.slice(0, 2)).toEqual(['save', 'ratings']);
+  });
+
+  it('a failure of the external scores never fails the check', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const d = deps({ refreshRatings: vi.fn(async () => { throw new Error('omdb down'); }) });
+    expect(await runDailyBatch(d)).toMatchObject({ processed: 1 });
+    expect(d.checked).toEqual(['w1']);
+    expect(d.noteFailure).not.toHaveBeenCalled();
+  });
+
+  it('skips external scores once the time budget is spent', async () => {
+    let t = 0;
+    const refreshRatings = vi.fn(async () => {});
+    const d = deps({ now: () => t, refreshRatings, fetchFresh: vi.fn(async () => { t += 45_000; return work(); }) });
+    expect(await runDailyBatch(d)).toMatchObject({ processed: 1 });
+    expect(refreshRatings).not.toHaveBeenCalled();
   });
 });

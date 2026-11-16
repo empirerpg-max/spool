@@ -1,3 +1,4 @@
+import { IMDB_ID } from './omdb';
 import type { Availability, AvailabilityType, NormalizedWork, SearchHit, Season } from './types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -61,6 +62,9 @@ function earliestBR(json: Json, types: number[]): string | null {
   return dates[0] ?? null;
 }
 
+const imdbIdOf = (j: Json): string | null =>
+  [j?.imdb_id, j?.external_ids?.imdb_id].find((v): v is string => typeof v === 'string' && IMDB_ID.test(v)) ?? null;
+
 const names = (cast: unknown) => arr(cast).map((c) => str(c?.name)).filter((n): n is string => !!n).slice(0, 5);
 
 function distinct(original: string | null, title: string): string | null {
@@ -87,6 +91,7 @@ export function normalizeTmdbMovie(ptBr: unknown, enOverview: string | null): No
     availability: availabilityBR(j),
     seasons: [],
     isbns: [],
+    imdbId: imdbIdOf(j),
   };
 }
 
@@ -112,6 +117,7 @@ export function normalizeTmdbTv(ptBr: unknown, enOverview: string | null): Norma
     availability: availabilityBR(j),
     seasons,
     isbns: [],
+    imdbId: imdbIdOf(j),
   };
 }
 
