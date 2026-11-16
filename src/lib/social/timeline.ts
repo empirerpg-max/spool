@@ -2,6 +2,7 @@ import 'server-only';
 import { createSessionClient } from '@/lib/supabase/session';
 import { supabaseConfigured } from '@/lib/supabase/env';
 import { workPath } from '@/lib/catalog/kind';
+import type { TimelineCursor } from './cursor';
 import { getPostsByIds } from './post-queries';
 import { one, PERSON, toPerson, toWork, WORK, type ProfileJoin, type WorkRow } from './queries';
 import type { ActiveCommunity, Person, SuggestedPerson, TimelineEntry } from './types';
@@ -25,10 +26,10 @@ async function byIds<T extends { id: string }>(db: Db, table: string, columns: s
  * One page of the signed-in member's timeline: posts and reviews by people they follow and new replies
  * in conversations they follow. `next` is the cursor for "Carregar mais" (null when there is no more).
  */
-export async function loadTimeline(before: string | null): Promise<{ entries: TimelineEntry[]; next: string | null }> {
+export async function loadTimeline(before: TimelineCursor | null): Promise<{ entries: TimelineEntry[]; next: TimelineCursor | null }> {
   if (!supabaseConfigured()) return { entries: [], next: null };
   const db = await createSessionClient();
-  const { data, error } = await db.rpc('timeline', { p_before: before, p_limit: TIMELINE_PAGE });
+  const { data, error } = await db.rpc('timeline', { p_before: before?.at ?? null, p_before_id: before?.id ?? null, p_limit: TIMELINE_PAGE });
   if (error) throw new Error(`Supabase: ${error.message}`);
   const rows = (data ?? []) as Row[];
   if (rows.length === 0) return { entries: [], next: null };
@@ -83,7 +84,8 @@ export async function loadTimeline(before: string | null): Promise<{ entries: Ti
     }];
   });
 
-  return { entries, next: rows.length === TIMELINE_PAGE ? rows[rows.length - 1].created_at : null };
+  const last = rows[rows.length - 1];
+  return { entries, next: rows.length === TIMELINE_PAGE ? { at: last.created_at, id: last.item_id } : null };
 }
 
 /** Active members the viewer does not follow yet (no blocked, muted or banned people). */

@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { TimelineEmpty } from '@/components/social/TimelineEmpty';
 import { TimelineItem } from '@/components/social/TimelineItem';
 import { getCurrentUser } from '@/lib/auth/current-user';
-import { isCursor } from '@/lib/social/cursor';
+import { cursorHref, parseCursor } from '@/lib/social/cursor';
 import { activeCommunities, loadTimeline, suggestedPeople } from '@/lib/social/timeline';
 
 export const metadata: Metadata = { title: 'Timeline · Lobby' };
@@ -18,11 +18,10 @@ async function emptyStateData() {
   return { people, communities };
 }
 
-export default async function TimelinePage({ searchParams }: { searchParams: Promise<{ antes?: string }> }) {
-  const { antes } = await searchParams;
-  const before = isCursor(antes) ? antes : null;
+export default async function TimelinePage({ searchParams }: { searchParams: Promise<{ antes?: string; id?: string }> }) {
+  const before = parseCursor(await searchParams);
   const user = await getCurrentUser();
-  if (!user) redirect(`/entrar?next=${encodeURIComponent(before ? `/timeline?antes=${encodeURIComponent(before)}` : '/timeline')}`);
+  if (!user) redirect(`/entrar?next=${encodeURIComponent(before ? cursorHref(before) : '/timeline')}`);
   const { entries, next } = await loadTimeline(before);
   const empty = entries.length === 0 && !before;
 
@@ -48,7 +47,7 @@ export default async function TimelinePage({ searchParams }: { searchParams: Pro
           )}
           <nav className="flex gap-4 text-sm">
             {before && <Link href="/timeline" className="underline">Voltar ao mais recente</Link>}
-            {next && <Link href={`/timeline?antes=${encodeURIComponent(next)}`} className="rounded-full border border-line-strong px-5 py-2 font-semibold hover:bg-surface-2">Carregar mais</Link>}
+            {next && <Link href={cursorHref(next)} className="rounded-full border border-line-strong px-5 py-2 font-semibold hover:bg-surface-2">Carregar mais</Link>}
           </nav>
         </>
       )}

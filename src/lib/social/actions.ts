@@ -163,9 +163,12 @@ export async function deletePost(postId: string): Promise<SocialActionState> {
   const user = await getCurrentUser();
   if (!user) return { error: socialErrorMessage({ message: 'not_signed_in' }) };
   const supabase = await createSessionClient();
+  const { data: target } = await supabase.from('social_posts').select('author_id').eq('id', postId).maybeSingle();
   const { error } = await supabase.rpc('delete_social_post', { p_id: postId });
   if (error) return failed('deletePost', error);
   revalidatePath(`/p/${postId}`);
+  // An admin removing someone else's post goes back to moderation; authors go back to their profile.
+  if (user.isAdmin && target && target.author_id !== user.id) redirect('/admin');
   redirect(user.username ? `/@${user.username}` : '/');
 }
 

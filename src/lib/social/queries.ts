@@ -8,13 +8,23 @@ import type { ListStatus } from '@/lib/list/types';
 /** A person as shown in lists: photo, name and @. */
 export type PersonSummary = { id: string; username: string; displayName: string | null; avatarUrl: string | null };
 
-export type ProfileJoin = { id: string; username: string | null; display_name: string | null; avatar_url: string | null };
-export const one = <T,>(v: T | T[] | null): T | null => (Array.isArray(v) ? v[0] ?? null : v);
+export const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? v[0] ?? null : v ?? null);
+
+/** Bio, photo and list setting live apart from the profile: hidden from people with a block either way. */
+type DetailsJoin = { bio?: string | null; avatar_url: string | null; list_public?: boolean };
+
+/** A person as embedded in a query (`PERSON`), or as returned flat by suggested_people (avatar_url). */
+export type ProfileJoin = {
+  id: string; username: string | null; display_name: string | null;
+  avatar_url?: string | null; details?: DetailsJoin | DetailsJoin[] | null;
+};
 
 export const toPerson = (p: ProfileJoin | null): PersonSummary | null =>
-  p && p.username ? { id: p.id, username: p.username, displayName: p.display_name, avatarUrl: p.avatar_url } : null;
+  p && p.username
+    ? { id: p.id, username: p.username, displayName: p.display_name, avatarUrl: p.avatar_url ?? one(p.details)?.avatar_url ?? null }
+    : null;
 
-export const PERSON = 'id, username, display_name, avatar_url';
+export const PERSON = 'id, username, display_name, details:profile_details(avatar_url)';
 
 /** People the signed-in user blocked and silenced (for "Minha conta"). */
 export async function listBlockedAndMuted(): Promise<{ blocked: PersonSummary[]; muted: PersonSummary[] }> {
@@ -42,10 +52,12 @@ export async function getOwnProfile(userId: string): Promise<OwnProfile> {
   const empty: OwnProfile = { displayName: null, bio: null, avatarUrl: null, listPublic: false };
   if (!supabaseConfigured()) return empty;
   const supabase = await createSessionClient();
-  const { data, error } = await supabase.from('profiles').select('display_name, bio, avatar_url, list_public').eq('id', userId).maybeSingle();
+  const { data, error } = await supabase.from('profiles')
+    .select('display_name, details:profile_details(bio, avatar_url, list_public)').eq('id', userId).maybeSingle();
   if (error) throw new Error(`Supabase: ${error.message}`);
   if (!data) return empty;
-  return { displayName: data.display_name, bio: data.bio, avatarUrl: data.avatar_url, listPublic: data.list_public };
+  const d = one(data.details as DetailsJoin | DetailsJoin[] | null);
+  return { displayName: data.display_name, bio: d?.bio ?? null, avatarUrl: d?.avatar_url ?? null, listPublic: d?.list_public ?? false };
 }
 
 /** Everything a profile page needs about a person and how the viewer relates to them. */
@@ -82,7 +94,7 @@ export async function getProfileByUsername(username: string): Promise<ProfileVie
   if (!me) return null;
 
   const { data: p, error } = await supabase.from('profiles')
-    .select('id, username, display_name, bio, avatar_url, list_public').eq('username', handle).maybeSingle();
+    .select('id, username, display_name, details:profile_details(bio, avatar_url, list_public)').eq('username', handle).maybeSingle();
   if (error) throw new Error(`Supabase: ${error.message}`);
   if (!p || !p.username) return null;
   const isMe = p.id === me;
@@ -103,8 +115,10 @@ export async function getProfileByUsername(username: string): Promise<ProfileVie
   const blockedByMe = (iBlocked.count ?? 0) > 0;
   if (blockedEither.data === true && !blockedByMe) return null; // they blocked the viewer: the profile "doesn't exist"
 
+  const d = one(p.details as DetailsJoin | DetailsJoin[] | null);
   return {
-    id: p.id, username: p.username, displayName: p.display_name, avatarUrl: p.avatar_url, bio: p.bio, listPublic: p.list_public,
+    id: p.id, username: p.username, displayName: p.display_name,
+    avatarUrl: d?.avatar_url ?? null, bio: d?.bio ?? null, listPublic: d?.list_public ?? false,
     followers: followers.count ?? 0, following: following.count ?? 0, posts: posts.count ?? 0,
     isMe, isFollowing: (isFollowing.count ?? 0) > 0, iBlocked: blockedByMe, iMuted: (iMuted.count ?? 0) > 0,
   };

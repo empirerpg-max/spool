@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { AVATAR_MAX_BYTES, centerSquare, checkAvatar, checkAvatarSource } from '@/lib/social/avatar';
+import { AVATAR_MAX_BYTES, avatarObjectPath, centerSquare, checkAvatar, checkAvatarSource, sniffImageType } from '@/lib/social/avatar';
 
 describe('checkAvatar', () => {
   it('accepts JPG, PNG and WebP up to 2 MB', () => {
@@ -31,5 +31,37 @@ describe('centerSquare', () => {
     expect(centerSquare(1200, 800)).toEqual({ sx: 200, sy: 0, side: 800 });
     expect(centerSquare(600, 1000)).toEqual({ sx: 0, sy: 200, side: 600 });
     expect(centerSquare(512, 512)).toEqual({ sx: 0, sy: 0, side: 512 });
+  });
+});
+
+describe('sniffImageType', () => {
+  const bytes = (...b: number[]) => new Uint8Array([...b, ...new Array(16).fill(0)]);
+  const ascii = (t: string) => [...t].map((c) => c.charCodeAt(0));
+  it('recognises JPEG, PNG and WebP by their first bytes', () => {
+    expect(sniffImageType(bytes(0xff, 0xd8, 0xff, 0xe0))).toBe('image/jpeg');
+    expect(sniffImageType(bytes(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a))).toBe('image/png');
+    expect(sniffImageType(bytes(...ascii('RIFF'), 1, 2, 3, 4, ...ascii('WEBP')))).toBe('image/webp');
+  });
+  it('refuses anything else, whatever the name or declared type', () => {
+    expect(sniffImageType(bytes(...ascii('GIF89a')))).toBeNull();
+    expect(sniffImageType(bytes(...ascii('<svg xmlns')))).toBeNull();
+    expect(sniffImageType(bytes(...ascii('RIFF'), 1, 2, 3, 4, ...ascii('WAVE')))).toBeNull();
+    expect(sniffImageType(new Uint8Array([0xff, 0xd8]))).toBeNull();
+    expect(sniffImageType(new Uint8Array())).toBeNull();
+  });
+});
+
+describe('avatarObjectPath', () => {
+  const user = '11111111-2222-3333-4444-555555555555';
+  const base = 'https://x.supabase.co/storage/v1/object/public/avatars/';
+  it('finds the stored file of this person from the photo address', () => {
+    expect(avatarObjectPath(`${base}${user}/abc.webp`, user)).toBe(`${user}/abc.webp`);
+    expect(avatarObjectPath(`${base}${user}.webp?v=123`, user)).toBe(`${user}.webp`);
+  });
+  it('never points at someone else’s file or a strange address', () => {
+    expect(avatarObjectPath(null, user)).toBeNull();
+    expect(avatarObjectPath(`${base}99999999-2222-3333-4444-555555555555/abc.webp`, user)).toBeNull();
+    expect(avatarObjectPath(`${base}${user}/../other/abc.webp`, user)).toBeNull();
+    expect(avatarObjectPath('https://example.com/a.webp', user)).toBeNull();
   });
 });
