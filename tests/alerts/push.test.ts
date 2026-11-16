@@ -48,4 +48,14 @@ describe('deliverPushes', () => {
     expect(await deliverPushes(d)).toEqual({ sent: 0, removed: 0 });
     expect(d.subscriptions).not.toHaveBeenCalled();
   });
+
+  it('marks alerts as handled before sending, so a cut-off run never resends them', async () => {
+    const order: string[] = [];
+    const d = deps({
+      markPushed: vi.fn(async () => { order.push('mark'); }),
+      send: vi.fn(async () => { order.push('send'); }),
+    });
+    await deliverPushes(d);
+    expect(order[0]).toBe('mark');
+  });
 });

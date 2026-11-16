@@ -30,7 +30,8 @@ export async function runDailyJob() {
     save: async (work) => { await repo.save(work); },
     recordEvent: async (workId, e) =>
       must(await db.rpc('record_event', { p_work: workId, p_kind: e.kind, p_key: e.key, p_title: e.title, p_body: e.body, p_url: e.url })) as number,
-    markChecked: async (workId) => { must(await db.from('works').update({ checked_on: today }).eq('id', workId)); },
+    markChecked: async (workId) => { must(await db.from('works').update({ checked_on: today, check_failures: 0 }).eq('id', workId)); },
+    noteFailure: async (workId) => { must(await db.rpc('note_check_failure', { p_work: workId, p_today: today })); },
     sendPushes: () => sendPendingPushes(db),
     prune: async () => {
       const cutoff = new Date(Date.now() - RETENTION_DAYS * 86_400_000).toISOString();

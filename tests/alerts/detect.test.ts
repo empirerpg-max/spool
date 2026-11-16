@@ -16,7 +16,9 @@ describe('detectEvents', () => {
     expect(run(null, work({ theatricalDateBR: TODAY }))).toEqual([
       { kind: 'cinema', key: 'cinema:w1', title: 'Matrix estreou nos cinemas', body: null, url: '/obra/filme/603' },
     ]);
-    expect(run(null, work({ theatricalDateBR: '2026-11-15' }))).toEqual([]);
+    expect(run(null, work({ theatricalDateBR: '2026-11-14' })).map((e) => e.key)).toEqual(['cinema:w1']);
+    expect(run(null, work({ theatricalDateBR: '2026-11-12' }))).toEqual([]);
+    expect(run(null, work({ theatricalDateBR: '2026-11-17' }))).toEqual([]);
   });
 
   it('announces each new streaming service, but not on the first check', () => {
@@ -62,5 +64,12 @@ describe('detectEvents', () => {
   it('announces a book release on the day', () => {
     expect(run(null, work({ kind: 'book', title: 'Torto Arado', releaseDateBR: TODAY })).map((e) => e.title)).toEqual(['Torto Arado foi lançado']);
     expect(run(null, work({ kind: 'movie', releaseDateBR: TODAY }))).toEqual([]);
+    expect(run(null, work({ kind: 'book', title: 'Torto Arado', releaseDateBR: '2026-11-14' })).map((e) => e.key)).toEqual(['livro_lancado:w1']);
+  });
+
+  it('a premiere missed by a late or skipped daily check still arrives within 3 days', () => {
+    const s = (airDate: string) => ({ number: 3, airDate, episodeCount: 8 });
+    expect(run(null, work({ kind: 'series', title: 'The Bear', seasons: [s('2026-11-14')] })).map((e) => e.key)).toEqual(['temporada_estreia:w1:3']);
+    expect(run(null, work({ kind: 'series', title: 'The Bear', seasons: [s('2026-11-10')] }))).toEqual([]);
   });
 });

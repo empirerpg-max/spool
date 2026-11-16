@@ -5,6 +5,13 @@ export type DetectedEvent = { kind: EventKind; key: string; title: string; body:
 
 const STREAMING: AvailabilityType[] = ['subscription', 'free', 'ads'];
 const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+/** Days back a date-based event still counts, so a late or skipped daily check doesn't lose it (dedupe prevents repeats). */
+const GRACE_DAYS = 3;
+const daysBefore = (iso: string, n: number) => {
+  const d = new Date(`${iso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - n);
+  return d.toISOString().slice(0, 10);
+};
 const streamingProviders = (w: NormalizedWork) =>
   new Set(w.availability.filter((a) => STREAMING.includes(a.type)).map((a) => a.provider));
 
@@ -17,8 +24,10 @@ export function detectEvents(input: { workId: string; path: string; before: Norm
   const { workId, path, before, after, today } = input;
   const out: DetectedEvent[] = [];
   const ev = (kind: EventKind, key: string, title: string) => out.push({ kind, key, title, body: null, url: path });
+  const from = daysBefore(today, GRACE_DAYS - 1);
+  const happened = (date: string | null) => date !== null && date >= from && date <= today;
 
-  if (after.kind === 'movie' && after.theatricalDateBR === today) {
+  if (after.kind === 'movie' && happened(after.theatricalDateBR)) {
     ev('cinema', `cinema:${workId}`, `${after.title} estreou nos cinemas`);
   }
 
@@ -32,7 +41,7 @@ export function detectEvents(input: { workId: string; path: string; before: Norm
   if (after.kind === 'series') {
     for (const s of after.seasons) {
       if (!s.airDate) continue;
-      if (s.airDate === today) {
+      if (happened(s.airDate)) {
         ev('temporada_estreia', `temporada_estreia:${workId}:${s.number}`, `${after.title}: temporada ${s.number} estreou`);
       } else if (before && s.airDate > today) {
         const old = before.seasons.find((x) => x.number === s.number);
@@ -43,7 +52,7 @@ export function detectEvents(input: { workId: string; path: string; before: Norm
     }
   }
 
-  if (after.kind === 'book' && after.releaseDateBR === today) {
+  if (after.kind === 'book' && happened(after.releaseDateBR)) {
     ev('livro_lancado', `livro_lancado:${workId}`, `${after.title} foi lançado`);
   }
   return out;

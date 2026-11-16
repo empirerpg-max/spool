@@ -36,7 +36,7 @@ export async function sendPendingPushes(db: SupabaseClient): Promise<void> {
       return (data ?? []).map((s): PushSub => ({ id: s.id, userId: s.user_id, endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth }));
     },
     send: async (s, payload) => {
-      await sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 86_400 });
+      await sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 86_400, timeout: 5_000 });
     },
     markPushed: async (ids) => { await db.from('notifications').update({ pushed_at: new Date().toISOString() }).in('id', ids); },
     removeSubscription: async (id) => { await db.from('push_subscriptions').delete().eq('id', id); },

@@ -7,7 +7,11 @@ export type DeliveryDeps = {
   send: (sub: PushSub, payload: string) => Promise<void>;
   markPushed: (notificationIds: number[]) => Promise<void>;
   removeSubscription: (id: number) => Promise<void>;
+  now?: () => number;
 };
+
+const PARALLEL = 10;
+const BUDGET_MS = 15_000;
 
 export function buildPushPayload(n: { title: string; body: string | null; url: string }): string {
   return JSON.stringify({ title: n.title, body: n.body ?? '', url: n.url });
@@ -21,25 +25,34 @@ export async function deliverPushes(d: DeliveryDeps): Promise<{ sent: number; re
   const pending = await d.pending();
   if (pending.length === 0) return { sent: 0, removed: 0 };
 
+  // Claim first: if this run is cut off mid-way, the next one won't send the same alerts again.
+  await d.markPushed(pending.map((p) => p.notificationId));
   const subs = await d.subscriptions([...new Set(pending.map((p) => p.userId))]);
+  const jobs = pending.flatMap((p) => subs.filter((s) => s.userId === p.userId).map((s) => ({ s, payload: buildPushPayload(p) })));
+
   let sent = 0;
   const removed = new Set<number>();
-  for (const p of pending) {
-    for (const s of subs.filter((x) => x.userId === p.userId && !removed.has(x.id))) {
+  const now = d.now ?? Date.now;
+  const start = now();
+  for (let i = 0; i < jobs.length; i += PARALLEL) {
+    if (now() - start >= BUDGET_MS) break;
+    await Promise.all(jobs.slice(i, i + PARALLEL).map(async ({ s, payload }) => {
+      if (removed.has(s.id)) return;
       try {
-        await d.send(s, buildPushPayload(p));
+        await d.send(s, payload);
         sent++;
       } catch (e) {
         const status = (e as { statusCode?: number }).statusCode;
         if (status === 404 || status === 410) {
-          await d.removeSubscription(s.id);
-          removed.add(s.id);
+          if (!removed.has(s.id)) {
+            removed.add(s.id);
+            await d.removeSubscription(s.id);
+          }
         } else {
           console.error('[alerts] push failed', status, (e as Error).message);
         }
       }
-    }
+    }));
   }
-  await d.markPushed(pending.map((p) => p.notificationId));
   return { sent, removed: removed.size };
 }

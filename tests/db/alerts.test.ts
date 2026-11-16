@@ -74,11 +74,11 @@ describe.skipIf(!hasDb)('alerts', () => {
   });
 
   it('push subscriptions are private to their owner', async () => {
-    await asUser(ana, "insert into push_subscriptions(endpoint, p256dh, auth) values ('https://push.example/1', 'k', 'a')");
+    await asUser(ana, "select claim_push_subscription('https://fcm.googleapis.com/fcm/send/1', 'k', 'a')");
     expect(await asUser(bia, 'select * from push_subscriptions')).toEqual([]);
-    expect(await asUser(ana, 'select endpoint from push_subscriptions')).toEqual([{ endpoint: 'https://push.example/1' }]);
-    await expectDbError(asUser(bia, "insert into push_subscriptions(user_id, endpoint, p256dh, auth) values ($1, 'https://push.example/2', 'k', 'a')", [ana]), /permission denied/);
-    await asUser(bia, "delete from push_subscriptions where endpoint = 'https://push.example/1'");
+    expect(await asUser(ana, 'select endpoint from push_subscriptions')).toEqual([{ endpoint: 'https://fcm.googleapis.com/fcm/send/1' }]);
+    await expectDbError(asUser(bia, "insert into push_subscriptions(user_id, endpoint, p256dh, auth) values ($1, 'https://fcm.googleapis.com/fcm/send/2', 'k', 'a')", [ana]), /permission denied/);
+    await asUser(bia, "delete from push_subscriptions where endpoint = 'https://fcm.googleapis.com/fcm/send/1'");
     expect(await asUser(ana, 'select count(*)::int as n from push_subscriptions')).toEqual([{ n: 1 }]);
   });
 
@@ -103,5 +103,29 @@ describe.skipIf(!hasDb)('alerts', () => {
     expect(await asServiceRole("select id from due_works('2026-11-16', 10)")).toEqual([{ id: movie }]);
     expect(await asServiceRole("select due_works_count('2026-11-16') as n")).toEqual([{ n: 1 }]);
     await expectDbError(asUser(ana, "select * from due_works('2026-11-16', 10)"), /permission denied/);
+  });
+
+  it('only real push services are accepted, at most 10 devices per person', async () => {
+    await expectDbError(asUser(ana, "select claim_push_subscription('https://evil.example/x', 'k', 'a')"), /check constraint|invalid_endpoint/);
+    for (let i = 0; i < 10; i++) await asUser(ana, "select claim_push_subscription($1, 'k', 'a')", [`https://web.push.apple.com/d${i}`]);
+    await expectDbError(asUser(ana, "select claim_push_subscription('https://web.push.apple.com/d10', 'k', 'a')"), 'too_many_devices');
+  });
+
+  it('a shared device moves to whoever turned alerts on last', async () => {
+    const ep = 'https://updates.push.services.mozilla.com/wpush/v2/abc';
+    await asUser(ana, "select claim_push_subscription($1, 'k', 'a')", [ep]);
+    await asUser(bia, "select claim_push_subscription($1, 'k2', 'a2')", [ep]);
+    expect(await asUser(ana, 'select count(*)::int as n from push_subscriptions')).toEqual([{ n: 0 }]);
+    expect(await asUser(bia, 'select p256dh from push_subscriptions')).toEqual([{ p256dh: 'k2' }]);
+  });
+
+  it('a work that keeps failing is put aside until tomorrow after 3 tries', async () => {
+    await list(ana, movie, 'quero');
+    await list(ana, series, 'quero');
+    for (let i = 0; i < 2; i++) await asServiceRole("select note_check_failure($1, '2026-11-16')", [movie]);
+    expect(await asServiceRole("select id from due_works('2026-11-16', 1)")).toEqual([{ id: series }]);
+    await asServiceRole("select note_check_failure($1, '2026-11-16')", [movie]);
+    expect(await asServiceRole("select due_works_count('2026-11-16') as n")).toEqual([{ n: 1 }]);
+    expect(await asServiceRole("select id from due_works('2026-11-17', 5)")).toHaveLength(2);
   });
 });

@@ -23,6 +23,7 @@ function deps(over: Partial<JobDeps> = {}): JobDeps & { checked: string[]; recor
     save: vi.fn(async () => {}),
     recordEvent: vi.fn(async (_id: string, e: { key: string }) => { recorded.push(e.key); return 1; }),
     markChecked: vi.fn(async (id: string) => { checked.push(id); }),
+    noteFailure: vi.fn(async () => {}),
     sendPushes: vi.fn(async () => {}),
     prune: vi.fn(async () => {}),
     ...over,
@@ -40,10 +41,29 @@ describe('runDailyBatch', () => {
     expect(d.prune).toHaveBeenCalled();
   });
 
-  it('leaves a work due when its source is down', async () => {
+  it('leaves a work due when its source is down, counting the failure', async () => {
     const d = deps({ fetchFresh: vi.fn(async () => { throw new CatalogUnavailableError('tmdb'); }), remainingCount: vi.fn(async () => 1) });
     expect(await runDailyBatch(d)).toEqual({ processed: 0, events: 0, remaining: 1 });
     expect(d.checked).toEqual([]);
+    expect(d.noteFailure).toHaveBeenCalledWith('w1');
+  });
+
+  it('records events before saving the new copy, so a failure never loses them', async () => {
+    const order: string[] = [];
+    const d = deps({
+      recordEvent: vi.fn(async () => { order.push('record'); return 1; }),
+      save: vi.fn(async () => { order.push('save'); }),
+    });
+    await runDailyBatch(d);
+    expect(order).toEqual(['record', 'save']);
+  });
+
+  it('a database error while recording keeps the old copy and the work due', async () => {
+    const d = deps({ recordEvent: vi.fn(async () => { throw new Error('Supabase: down'); }) });
+    expect(await runDailyBatch(d)).toMatchObject({ processed: 0 });
+    expect(d.save).not.toHaveBeenCalled();
+    expect(d.checked).toEqual([]);
+    expect(d.noteFailure).toHaveBeenCalledWith('w1');
   });
 
   it('marks works that no longer exist upstream as checked, without events', async () => {

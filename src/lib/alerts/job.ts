@@ -16,6 +16,8 @@ export type JobDeps = {
   save: (work: NormalizedWork) => Promise<void>;
   recordEvent: (workId: string, e: DetectedEvent) => Promise<number>;
   markChecked: (workId: string) => Promise<void>;
+  /** Counts a failed check; after a few the work waits until tomorrow (so it can't block the queue). */
+  noteFailure: (workId: string) => Promise<void>;
   sendPushes: () => Promise<void>;
   prune: () => Promise<void>;
   now?: () => number;
@@ -33,21 +35,22 @@ export async function runDailyBatch(d: JobDeps): Promise<{ processed: number; ev
     try {
       const before = await d.findCached(w.kind, w.externalId);
       const after = await d.fetchFresh(w.kind, w.externalId);
-      await d.save(after);
+      // Record first: if anything fails after this, the old copy stays and the next run detects again
+      // (the dedupe key prevents a second alert).
       for (const e of detectEvents({ workId: w.id, path: workPath(w.kind, w.externalId), before, after, today: d.today })) {
         await d.recordEvent(w.id, e);
         events++;
       }
+      await d.save(after);
       await d.markChecked(w.id);
       processed++;
     } catch (e) {
       if (e instanceof WorkNotFoundError) {
         await d.markChecked(w.id);
         processed++;
-      } else if (!(e instanceof CatalogUnavailableError)) {
-        console.error('[alerts] work failed', w.id, e);
-        await d.markChecked(w.id);
-        processed++;
+      } else {
+        if (!(e instanceof CatalogUnavailableError)) console.error('[alerts] work failed', w.id, e);
+        await d.noteFailure(w.id).catch(() => {});
       }
     }
   }
