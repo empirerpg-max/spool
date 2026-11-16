@@ -11,3 +11,11 @@ describe('Footer', () => {
     expect(screen.getByRole('img', { name: 'TMDB' })).toBeInTheDocument();
   });
 });
+
+describe('Footer links', () => {
+  it('links to the terms and the privacy policy', () => {
+    render(<Footer />);
+    expect(screen.getByRole('link', { name: 'Termos de Uso' })).toHaveAttribute('href', '/termos');
+    expect(screen.getByRole('link', { name: 'Privacidade' })).toHaveAttribute('href', '/privacidade');
+  });
+});

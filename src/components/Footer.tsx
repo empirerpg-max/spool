@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 const TMDB_LOGO =
   'https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb6f8a62a4c6bc55cd9ba82bb2cd95f6c.svg';
 
@@ -8,6 +10,10 @@ export function Footer() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={TMDB_LOGO} alt="TMDB" width={80} height={10} />
         <p>Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB.</p>
+        <nav aria-label="Documentos" className="flex gap-4 sm:ml-auto">
+          <Link href="/termos" className="hover:text-fg">Termos de Uso</Link>
+          <Link href="/privacidade" className="hover:text-fg">Privacidade</Link>
+        </nav>
       </div>
     </footer>
   );
