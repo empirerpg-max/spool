@@ -8,11 +8,20 @@ import { FollowButton } from './FollowButton';
 const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /** What a new member sees instead of an empty page: people to follow and busy communities. */
-export function TimelineEmpty({ people, communities }: { people: SuggestedPerson[]; communities: ActiveCommunity[] }) {
+type Props = {
+  people: SuggestedPerson[];
+  communities: ActiveCommunity[];
+  /** Page to refresh after following someone. */
+  path?: string;
+  /** Narrow version for the home's side column. */
+  compact?: boolean;
+};
+
+export function TimelineEmpty({ people, communities, path = '/timeline', compact = false }: Props) {
   return (
-    <div className="space-y-10">
+    <div className={compact ? 'space-y-6' : 'space-y-10'}>
       <header className="space-y-2">
-        <h2 className="font-display text-2xl font-bold">Sua timeline está vazia por enquanto</h2>
+        <h2 className={`font-display font-bold ${compact ? 'text-lg' : 'text-2xl'}`}>Sua timeline está vazia por enquanto</h2>
         <p className="text-muted">
           Aqui aparecem as publicações e resenhas de quem você segue e as respostas nas conversas que você acompanha.
           Comece seguindo alguns membros ou entrando numa comunidade.
@@ -32,7 +41,7 @@ export function TimelineEmpty({ people, communities }: { people: SuggestedPerson
                     {p.displayName ? `@${p.username} · ` : ''}{p.recentPosts > 0 ? `${count(p.recentPosts, 'participação', 'participações')} no último mês` : 'Membro do clube'}
                   </span>
                 </Link>
-                <FollowButton targetId={p.id} path="/timeline" initialFollowing={false} size="sm" />
+                <FollowButton targetId={p.id} path={path} initialFollowing={false} size="sm" />
               </li>
             ))}
           </ul>
@@ -42,7 +51,7 @@ export function TimelineEmpty({ people, communities }: { people: SuggestedPerson
       {communities.length > 0 && (
         <section className="space-y-3">
           <h3 className="font-display text-lg font-bold">Comunidades movimentadas da semana</h3>
-          <ul className="grid gap-2 sm:grid-cols-2">
+          <ul className={compact ? 'grid gap-2' : 'grid gap-2 sm:grid-cols-2'}>
             {communities.map((c) => (
               <li key={`${c.work.kind}-${c.work.externalId}`}>
                 <Link href={`${workPath(c.work.kind, c.work.externalId)}#comunidade`} className="flex items-center gap-3 rounded-xl border border-line bg-surface p-2 hover:border-line-strong">

@@ -52,6 +52,7 @@
   - "Chegou no streaming" **geral** não é possível (nenhuma fonte gratuita informa a data de chegada para todas as obras); essa novidade continua só nos avisos da lista (*minha decisão*).
 - Abaixo (celular) ou ao lado (computador): a **Timeline**.
 - Avisos da lista ficam no sino, não repetidos na tela inicial.
+- **Página Timeline** (pedido do usuário, 16/11): também mostra os lançamentos, de forma resumida — uma faixa compacta "Em alta nos lançamentos" no topo, com ~8 títulos mais populares do momento (filmes, séries e livros misturados) e link "Ver todos" para a tela inicial.
 
 **Sem login** (decisão do usuário: explicação + exibição rápida de como funciona)
 - Chamada "Um clube para quem ama filmes, séries e livros" + botões **Tenho um convite** (→ criar conta) e **Já sou membro** (→ entrar) + linha "Ainda não tem convite? Peça para quem te indicou o Lobby".

@@ -43,3 +43,8 @@ export async function searchTmdbMovie(title: string, year: number | null, fetchI
   const json = (await getJson(url('/search/movie', params), 'tmdb', headers(), fetchImpl)) as { results?: unknown[] };
   return normalizeTmdbSearch({ results: (json?.results ?? []).map((r) => ({ ...(r as object), media_type: 'movie' })) });
 }
+
+/** A TMDB list endpoint (e.g. `/movie/now_playing`) in Portuguese, as raw JSON. */
+export async function fetchTmdbList(path: string, params: Record<string, string>, fetchImpl: FetchImpl = fetch): Promise<unknown> {
+  return getJson(url(path, { language: 'pt-BR', ...params }), 'tmdb', headers(), fetchImpl);
+}

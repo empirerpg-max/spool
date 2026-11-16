@@ -1,28 +1,22 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { TrendingStrip } from '@/components/home/TrendingStrip';
 import { TimelineEmpty } from '@/components/social/TimelineEmpty';
 import { TimelineItem } from '@/components/social/TimelineItem';
 import { getCurrentUser } from '@/lib/auth/current-user';
+import { loadReleases, todaySaoPaulo, trending } from '@/lib/home/releases';
 import { cursorHref, parseCursor } from '@/lib/social/cursor';
-import { activeCommunities, loadTimeline, suggestedPeople } from '@/lib/social/timeline';
+import { loadTimeline, timelineSuggestions } from '@/lib/social/timeline';
 
 export const metadata: Metadata = { title: 'Timeline · Lobby' };
-
-/** Suggestions never break the page: without them it still shows the empty-state text. */
-async function emptyStateData() {
-  const [people, communities] = await Promise.all([
-    suggestedPeople().catch((e) => { console.error('[social] suggestions failed', e); return []; }),
-    activeCommunities().catch((e) => { console.error('[social] active communities failed', e); return []; }),
-  ]);
-  return { people, communities };
-}
 
 export default async function TimelinePage({ searchParams }: { searchParams: Promise<{ antes?: string; id?: string }> }) {
   const before = parseCursor(await searchParams);
   const user = await getCurrentUser();
   if (!user) redirect(`/entrar?next=${encodeURIComponent(before ? cursorHref(before) : '/timeline')}`);
-  const { entries, next } = await loadTimeline(before);
+  // The strip only on the first page; release lists are cached for hours and never break the page.
+  const [{ entries, next }, releases] = await Promise.all([loadTimeline(before), before ? null : loadReleases(todaySaoPaulo())]);
   const empty = entries.length === 0 && !before;
 
   return (
@@ -34,8 +28,10 @@ export default async function TimelinePage({ searchParams }: { searchParams: Pro
         )}
       </header>
 
+      {releases && <TrendingStrip items={trending(releases)} />}
+
       {empty ? (
-        <TimelineEmpty {...await emptyStateData()} />
+        <TimelineEmpty {...await timelineSuggestions()} />
       ) : (
         <>
           {entries.length === 0 ? (

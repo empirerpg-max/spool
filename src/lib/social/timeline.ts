@@ -113,3 +113,12 @@ export async function activeCommunities(limit = 6): Promise<ActiveCommunity[]> {
     return w ? [{ work: toWork(w), topics: r.topics, posts: r.posts }] : [];
   });
 }
+
+/** Suggestions for an empty timeline. They never break the page: without them it still shows the empty-state text. */
+export async function timelineSuggestions(): Promise<{ people: SuggestedPerson[]; communities: ActiveCommunity[] }> {
+  const [people, communities] = await Promise.all([
+    suggestedPeople().catch((e) => { console.error('[social] suggestions failed', e); return []; }),
+    activeCommunities().catch((e) => { console.error('[social] active communities failed', e); return []; }),
+  ]);
+  return { people, communities };
+}
