@@ -158,3 +158,14 @@ Enquanto o Lobby não envia e-mails, quem esquecer a senha pede para você. Em *
 1. A pessoa cria a conta normalmente (com convite) e escolhe o @.
 2. Supabase → **Table Editor** → tabela **profiles** → linha da pessoa (pelo `username`).
 3. Célula **is_admin** → **true** → **Save**.
+
+## 9. Avisos diários (estreias, streaming, temporadas)
+
+Todo dia de manhã o GitHub pede ao site para conferir as obras das listas e criar os avisos. Para isso, os dois precisam combinar uma senha só deles: o `CRON_SECRET`.
+
+1. **Gere uma senha longa** (32 caracteres ou mais, só letras e números) num gerador de senhas — por exemplo, o do seu navegador ou do seu gerenciador de senhas. Não use uma senha que você já usa.
+2. **Vercel** → **Environment Variables** → nova variável `CRON_SECRET` (tipo **Secret**, ambiente **Production**) com essa senha → **Save** → **Deployments** → `⋯` → **Redeploy**.
+3. **GitHub** → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**: nome `CRON_SECRET`, mesma senha → **Add secret**.
+4. **Teste:** GitHub → **Actions** → **Avisos diários** → **Run workflow**. Deve terminar com ✅ e "Tudo conferido.".
+
+As **notificações no celular** não precisam de nenhuma chave sua: o site cria as próprias chaves na primeira vez. Cada pessoa ativa em **Avisos → Ativar avisos no celular**. No iPhone, é preciso antes adicionar o Lobby à tela de início.
