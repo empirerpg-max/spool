@@ -35,10 +35,19 @@ grant select on invites to authenticated;
 create function normalize_invite(p_code text) returns text
 language sql immutable as $$ select upper(regexp_replace(coalesce(p_code, ''), '\s', '', 'g')) $$;
 
+-- A "porta" da primeira conta (sem convite, vira admin) abre uma única vez e fecha para sempre.
+create table app_settings (
+  id boolean primary key default true check (id),
+  bootstrap_done boolean not null
+);
+insert into app_settings (bootstrap_done) values (exists (select 1 from profiles where is_admin));
+alter table app_settings enable row level security;
+revoke all on app_settings from anon, authenticated;
+
 -- Para a tela de cadastro mostrar uma mensagem clara antes de tentar criar a conta.
 create function invite_is_valid(p_code text) returns boolean
 language sql stable security definer set search_path = public as $$
-  select not exists (select 1 from profiles where is_admin)
+  select not (select bootstrap_done from app_settings)
       or exists (select 1 from invites where code = normalize_invite(p_code) and used_at is null);
 $$;
 revoke execute on function invite_is_valid(text) from public;
@@ -92,8 +101,16 @@ begin
     raise exception 'terms_required' using errcode = 'P0001';
   end if;
 
-  -- Enquanto não houver administrador, quem se cadastra sem convite vira o administrador.
-  v_bootstrap := v_code = '' and not exists (select 1 from profiles where is_admin);
+  -- A primeira conta sem convite vira administradora; a trava impede duas ao mesmo tempo
+  -- e a porta nunca reabre (nem se o admin for rebaixado ou apagado).
+  v_bootstrap := false;
+  if v_code = '' then
+    perform 1 from app_settings for update;
+    if not (select bootstrap_done from app_settings) then
+      v_bootstrap := true;
+      update app_settings set bootstrap_done = true;
+    end if;
+  end if;
 
   insert into public.profiles (id, first_name, last_name, birth_date, terms_version, terms_accepted_at, is_admin)
     values (new.id, v_first, v_last, v_birth, m->>'terms_version', now(), v_bootstrap);
@@ -105,3 +122,13 @@ begin
   return new;
 end;
 $$;
+
+-- Encerra todas as sessões de uma conta (usado quando a administração gera uma senha temporária).
+-- Só o servidor do Lobby (chave secreta) pode chamar.
+create function end_sessions(p_user uuid) returns void
+language sql security definer set search_path = public, auth as $$
+  delete from auth.refresh_tokens where user_id = p_user::text;
+  delete from auth.sessions where user_id = p_user;
+$$;
+revoke execute on function end_sessions(uuid) from public, anon, authenticated;
+grant execute on function end_sessions(uuid) to service_role;

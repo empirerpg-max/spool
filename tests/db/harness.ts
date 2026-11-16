@@ -27,6 +27,10 @@ alter default privileges in schema public grant execute on functions to anon, au
 create schema auth;
 grant usage on schema auth to anon, authenticated;
 create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb default '{}');
+create table auth.sessions (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users on delete cascade);
+create table auth.refresh_tokens (id bigserial primary key, user_id text, session_id uuid);
+do $$ begin create role service_role nologin bypassrls; exception when duplicate_object then null; end $$;
+grant usage on schema public to service_role;
 create function auth.uid() returns uuid language sql stable as
   $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 grant execute on function auth.uid() to anon, authenticated;
@@ -67,6 +71,12 @@ async function tx<T>(setup: (c: PoolClient) => Promise<void>, sql: string, param
 
 export function asSuperuser<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
   return tx<T>(async () => {}, sql, params);
+}
+
+export function asServiceRole<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
+  return tx<T>(async (c) => {
+    await c.query('set local role service_role');
+  }, sql, params);
 }
 
 export function asAnon<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {

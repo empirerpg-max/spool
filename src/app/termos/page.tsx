@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPage } from '@/components/legal/LegalPage';
+import { ContactLine } from '@/components/legal/ContactLine';
 
 export const metadata: Metadata = { title: 'Termos de Uso · Lobby' };
 
@@ -24,7 +25,7 @@ export default function TermsPage() {
         <ul>
           <li>Você é responsável por manter sua senha em segredo e por tudo que for feito com a sua conta.</li>
           <li>Seu nome de usuário (@) é público. Seu nome, sobrenome, data de nascimento e e-mail não aparecem para outras pessoas.</li>
-          <li>Você pode pedir a exclusão da sua conta a qualquer momento pelo contato abaixo.</li>
+          <li>Você pode pedir a exclusão da sua conta a qualquer momento <ContactLine />.</li>
         </ul>
       </section>
       <section>
@@ -39,7 +40,7 @@ export default function TermsPage() {
       </section>
       <section>
         <h2>5. Moderação</h2>
-        <p>Qualquer pessoa pode denunciar um tópico ou resposta. A equipe do Lobby analisa as denúncias e pode remover conteúdos que quebrem estas regras e suspender ou banir contas, inclusive sem aviso prévio em casos graves. Se você acha que houve um engano, fale com a gente pelo contato abaixo.</p>
+        <p>Qualquer pessoa pode denunciar um tópico ou resposta. A equipe do Lobby analisa as denúncias e pode remover conteúdos que quebrem estas regras e banir contas, inclusive sem aviso prévio em casos graves. Se você acha que houve um engano, fale com a gente <ContactLine />.</p>
       </section>
       <section>
         <h2>6. O que você publica</h2>
@@ -59,7 +60,7 @@ export default function TermsPage() {
       </section>
       <section>
         <h2>10. Privacidade e contato</h2>
-        <p>Veja como tratamos seus dados na <Link href="/privacidade" className="underline">Política de Privacidade</Link>. Dúvidas, pedidos ou recursos: fale com a equipe do Lobby pelos canais informados no site.</p>
+        <p>Veja como tratamos seus dados na <Link href="/privacidade" className="underline">Política de Privacidade</Link>. Dúvidas, pedidos ou recursos: fale com a equipe do Lobby <ContactLine />.</p>
       </section>
     </LegalPage>
   );

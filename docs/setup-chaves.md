@@ -141,7 +141,13 @@ Sem domínio próprio, o Supabase não consegue mandar e-mail para quem é de fo
 3. Escolha seu nome de usuário (@).
 4. O link **Admin** aparece no topo. Em **Admin → Convites**, gere um código para cada pessoa que você quiser chamar.
 
-> Faça isso **antes** de divulgar o endereço do site: quem criar a primeira conta vira administrador.
+> Faça isso **antes** de divulgar o endereço do site: quem criar a primeira conta vira administrador. Essa porta abre uma única vez: depois disso, só com convite.
+
+> Contas só podem ser criadas pelo site. Os botões "Add user" e "Invite user" do painel do Supabase não funcionam (o banco recusa contas sem os dados do cadastro).
+
+### 7e. E-mail de contato
+
+Os Termos e a Política de Privacidade precisam de um e-mail para pedidos (exclusão de conta, LGPD, recursos de moderação). Na Vercel, crie a variável `NEXT_PUBLIC_CONTACT_EMAIL` (tipo **Config**, Production e Preview) com esse e-mail e faça **Redeploy**.
 
 ### 7d. Esqueceu a senha?
 

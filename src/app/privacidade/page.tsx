@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LegalPage } from '@/components/legal/LegalPage';
+import { ContactLine } from '@/components/legal/ContactLine';
 
 export const metadata: Metadata = { title: 'Política de Privacidade · Lobby' };
 
@@ -26,7 +27,7 @@ export default function PrivacyPage() {
           <li>Confirmar que você tem pelo menos 16 anos.</li>
           <li>Mostrar sua lista e suas resenhas para você, e o que você publicar para a comunidade.</li>
           <li>Moderar a comunidade e proteger o Lobby contra abusos.</li>
-          <li>Enviar avisos que você pediu, como estreias e novas temporadas.</li>
+          <li>Quando esse recurso estiver disponível, enviar os avisos que você ativar, como estreias e novas temporadas.</li>
         </ul>
       </section>
       <section>
@@ -46,7 +47,7 @@ export default function PrivacyPage() {
       </section>
       <section>
         <h2>7. Seus direitos</h2>
-        <p>Você pode pedir para ver, corrigir, levar para outro serviço ou apagar seus dados, e retirar seu consentimento. Faça o pedido pelos canais de contato do Lobby.</p>
+        <p>Você pode pedir para ver, corrigir, levar para outro serviço ou apagar seus dados, e retirar seu consentimento. Faça o pedido <ContactLine />.</p>
       </section>
       <section>
         <h2>8. Menores de idade</h2>

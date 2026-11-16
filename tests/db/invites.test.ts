@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Pool } from 'pg';
-import { hasDb, resetDatabase, asAnon, asSuperuser, asUser, createUser, signUpRaw, randomCode, expectDbError } from './harness';
+import { hasDb, resetDatabase, asAnon, asSuperuser, asUser, asServiceRole, createUser, signUpRaw, randomCode, expectDbError } from './harness';
 
 const full = (over: Record<string, string> = {}) => ({
   first_name: 'Ana', last_name: 'Souza', birth_date: '1995-05-05', terms_version: '2026-11-16', ...over,
@@ -111,5 +111,50 @@ describe.skipIf(!hasDb)('invite-only sign-up', () => {
     await expectDbError(asAnon('select birth_date from profiles'), /permission denied/);
     expect(await asAnon('select username from profiles where id = $1', [bia])).toEqual([{ username: 'bia' }]);
     expect(await asUser(bia, 'select first_name, last_name, birth_date::text from my_profile()')).toEqual([{ first_name: 'Bia', last_name: 'Silva', birth_date: '1990-01-01' }]);
+  });
+
+  it('two simultaneous first sign-ups produce only one admin', async () => {
+    const pool = new Pool({ connectionString: process.env.TEST_DATABASE_URL, max: 2 });
+    const [a, b] = await Promise.all([pool.connect(), pool.connect()]);
+    try {
+      await a.query('begin');
+      await b.query('begin');
+      await a.query("insert into auth.users(email, raw_user_meta_data) values ('p1@example.com', $1)", [JSON.stringify(full())]);
+      const second = b.query("insert into auth.users(email, raw_user_meta_data) values ('p2@example.com', $1)", [JSON.stringify(full())]);
+      second.catch(() => {});
+      await new Promise((r) => setTimeout(r, 300)); // let the second sign-up run its checks while the first is still open
+      await a.query('commit');
+      await expect(second).rejects.toThrow('invalid_invite');
+      await b.query('rollback');
+    } finally {
+      a.release(); b.release(); await pool.end();
+    }
+    expect(await asSuperuser('select count(*)::int as n from profiles where is_admin')).toEqual([{ n: 1 }]);
+  });
+
+  it('the free first-account door never reopens', async () => {
+    const adm = await signUpRaw('dona@example.com', full());
+    await asSuperuser('update profiles set is_admin = false where id = $1', [adm]);
+    expect(await asAnon("select invite_is_valid('') as ok")).toEqual([{ ok: false }]);
+    await expectDbError(signUpRaw('x@example.com', full()), 'invalid_invite');
+    await asSuperuser('delete from auth.users where id = $1', [adm]);
+    await expectDbError(signUpRaw('y@example.com', full()), 'invalid_invite');
+  });
+
+  it('a migration on a database that already has an admin keeps the door closed', async () => {
+    expect(await asSuperuser('select bootstrap_done from app_settings')).toEqual([{ bootstrap_done: false }]);
+    await signUpRaw('dona@example.com', full());
+    expect(await asSuperuser('select bootstrap_done from app_settings')).toEqual([{ bootstrap_done: true }]);
+  });
+
+  it('only the server (service role) can end someone else\'s sessions', async () => {
+    await signUpRaw('dona@example.com', full());
+    const bia = await createUser('bia@example.com');
+    await asSuperuser('insert into auth.sessions(user_id) values ($1), ($1)', [bia]);
+    await asSuperuser("insert into auth.refresh_tokens(user_id) values ($1::text)", [bia]);
+    await expectDbError(asUser(bia, 'select end_sessions($1)', [bia]), /permission denied/);
+    await asServiceRole('select end_sessions($1)', [bia]);
+    expect(await asSuperuser('select count(*)::int as n from auth.sessions where user_id = $1', [bia])).toEqual([{ n: 0 }]);
+    expect(await asSuperuser('select count(*)::int as n from auth.refresh_tokens where user_id = $1::text', [bia])).toEqual([{ n: 0 }]);
   });
 });

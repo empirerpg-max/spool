@@ -10,6 +10,10 @@ export function ChangePasswordForm() {
   return (
     <form action={action} className="max-w-sm space-y-3">
       <label className="block space-y-1">
+        <span className="text-sm font-medium">Senha atual</span>
+        <input name="currentPassword" type="password" required autoComplete="current-password" className={field} />
+      </label>
+      <label className="block space-y-1">
         <span className="text-sm font-medium">Nova senha</span>
         <input name="password" type="password" required autoComplete="new-password" className={field} />
       </label>
