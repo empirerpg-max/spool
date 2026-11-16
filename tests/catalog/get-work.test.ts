@@ -8,7 +8,7 @@ const NOW = new Date('2026-11-15T12:00:00Z');
 const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString();
 
 const work = (title: string, kind: WorkKind = 'movie', externalId = '603'): NormalizedWork => ({
-  kind, externalId, title, originalTitle: null, overview: null, overviewLang: null, posterUrl: null,
+  kind, externalId, title, originalTitle: null, overview: null, overviewLang: null, posterUrl: null, backdropUrl: null,
   releaseDateBR: null, theatricalDateBR: null, digitalDateBR: null, trailerYoutubeKey: null,
   people: [], availability: [], seasons: [], isbns: [],
 });
