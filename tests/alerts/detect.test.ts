@@ -6,7 +6,7 @@ const TODAY = '2026-11-16';
 const work = (over: Partial<NormalizedWork> = {}): NormalizedWork => ({
   kind: 'movie', externalId: '603', title: 'Matrix', originalTitle: null, overview: null, overviewLang: null,
   posterUrl: null, backdropUrl: null, releaseDateBR: null, theatricalDateBR: null, digitalDateBR: null,
-  trailerYoutubeKey: null, people: [], availability: [], seasons: [], isbns: [], ...over,
+  trailerYoutubeKey: null, people: [], availability: [], seasons: [], isbns: [], imdbId: null, ...over,
 });
 const run = (before: NormalizedWork | null, after: NormalizedWork) =>
   detectEvents({ workId: 'w1', path: '/obra/filme/603', before, after, today: TODAY });

@@ -14,7 +14,7 @@ function url(path: string, params: Record<string, string>): string {
 
 export async function fetchTmdbWork(kind: 'movie' | 'series', id: string, fetchImpl: FetchImpl = fetch): Promise<NormalizedWork> {
   const path = kind === 'movie' ? `/movie/${id}` : `/tv/${id}`;
-  const append = kind === 'movie' ? 'videos,credits,watch/providers,release_dates' : 'videos,aggregate_credits,watch/providers';
+  const append = kind === 'movie' ? 'videos,credits,watch/providers,release_dates' : 'videos,aggregate_credits,watch/providers,external_ids';
   const pt = (await getJson(
     url(path, { language: 'pt-BR', append_to_response: append, include_video_language: 'pt,en,null' }),
     'tmdb', headers(), fetchImpl,

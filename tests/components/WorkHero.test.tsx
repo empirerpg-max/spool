@@ -7,7 +7,7 @@ const work = (over: Partial<NormalizedWork> = {}): NormalizedWork => ({
   kind: 'series', externalId: '1399', title: 'Game of Thrones', originalTitle: null, overview: null, overviewLang: null,
   posterUrl: 'https://image.tmdb.org/t/p/w500/p.jpg', backdropUrl: 'https://image.tmdb.org/t/p/w1280/b.jpg',
   releaseDateBR: '2011-04-17', theatricalDateBR: null, digitalDateBR: null, trailerYoutubeKey: null,
-  people: [], availability: [], seasons: [], isbns: [], ...over,
+  people: [], availability: [], seasons: [], isbns: [], imdbId: null, ...over,
 });
 
 describe('WorkHero', () => {

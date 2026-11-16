@@ -10,7 +10,7 @@ const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOStr
 const work = (title: string, kind: WorkKind = 'movie', externalId = '603'): NormalizedWork => ({
   kind, externalId, title, originalTitle: null, overview: null, overviewLang: null, posterUrl: null, backdropUrl: null,
   releaseDateBR: null, theatricalDateBR: null, digitalDateBR: null, trailerYoutubeKey: null,
-  people: [], availability: [], seasons: [], isbns: [],
+  people: [], availability: [], seasons: [], isbns: [], imdbId: null,
 });
 
 function memoryRepo(seed?: { work: NormalizedWork; syncedAt: string }): WorkRepository & { saved: NormalizedWork[] } {
