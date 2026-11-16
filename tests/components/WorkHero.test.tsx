@@ -46,4 +46,11 @@ describe('WorkHero', () => {
     render(<WorkHero work={work()} topicCount={0}><button type="button">Quero ver</button></WorkHero>);
     expect(screen.getByRole('button', { name: 'Quero ver' })).toBeInTheDocument();
   });
+
+  it('shows the scores between the title and the list controls', () => {
+    render(<WorkHero work={work()} topicCount={0} ratings={<p>Nota do Lobby</p>}><button type="button">Quero ver</button></WorkHero>);
+    const note = screen.getByText('Nota do Lobby');
+    const button = screen.getByRole('button', { name: 'Quero ver' });
+    expect(note.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });
