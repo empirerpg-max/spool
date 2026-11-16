@@ -5,18 +5,9 @@ import { TimelineEmpty } from '@/components/social/TimelineEmpty';
 import { TimelineItem } from '@/components/social/TimelineItem';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { cursorHref, parseCursor } from '@/lib/social/cursor';
-import { activeCommunities, loadTimeline, suggestedPeople } from '@/lib/social/timeline';
+import { loadTimeline, timelineSuggestions } from '@/lib/social/timeline';
 
 export const metadata: Metadata = { title: 'Timeline · Lobby' };
-
-/** Suggestions never break the page: without them it still shows the empty-state text. */
-async function emptyStateData() {
-  const [people, communities] = await Promise.all([
-    suggestedPeople().catch((e) => { console.error('[social] suggestions failed', e); return []; }),
-    activeCommunities().catch((e) => { console.error('[social] active communities failed', e); return []; }),
-  ]);
-  return { people, communities };
-}
 
 export default async function TimelinePage({ searchParams }: { searchParams: Promise<{ antes?: string; id?: string }> }) {
   const before = parseCursor(await searchParams);
@@ -35,7 +26,7 @@ export default async function TimelinePage({ searchParams }: { searchParams: Pro
       </header>
 
       {empty ? (
-        <TimelineEmpty {...await emptyStateData()} />
+        <TimelineEmpty {...await timelineSuggestions()} />
       ) : (
         <>
           {entries.length === 0 ? (
