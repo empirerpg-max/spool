@@ -15,9 +15,9 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
 
   return (
     <section className="space-y-6 py-8">
-      <h1 className="text-center text-2xl font-bold">Entrar no Lobby</h1>
+      <h1 className="text-center font-display text-3xl font-extrabold">Entrar no Lobby</h1>
       {erro && <p role="alert" className="text-center text-danger">Não foi possível entrar. Tente de novo.</p>}
-      <LoginForm next={target} googleEnabled={process.env.NEXT_PUBLIC_GOOGLE_LOGIN === 'on'} />
+      <LoginForm next={target} />
     </section>
   );
 }

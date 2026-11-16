@@ -1,42 +1,40 @@
 'use client';
 
-import { useState } from 'react';
-import { createBrowserSupabase } from '@/lib/supabase/browser';
+import Link from 'next/link';
+import { useActionState } from 'react';
+import { signIn, type AuthState } from '@/lib/auth/actions';
 
-export function LoginForm({ next, googleEnabled }: { next: string; googleEnabled: boolean }) {
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+const field = 'w-full rounded-lg border border-line-strong bg-surface px-3 py-2';
 
-  const redirectTo = () => `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
-
-  async function sendLink(formData: FormData) {
-    setStatus('sending');
-    const email = String(formData.get('email') ?? '').trim();
-    const { error } = await createBrowserSupabase().auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo() } });
-    setStatus(error ? 'error' : 'sent');
-  }
-
-  async function google() {
-    await createBrowserSupabase().auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectTo() } });
-  }
-
+export function LoginForm({ next }: { next: string }) {
+  const [state, action, pending] = useActionState<AuthState, FormData>(signIn, {});
+  const err = state.fieldErrors ?? {};
   return (
     <div className="mx-auto max-w-sm space-y-6">
-      {googleEnabled && (
-        <button type="button" onClick={google} className="w-full rounded-lg border border-line px-4 py-2 font-medium">
-          Entrar com Google
-        </button>
-      )}
-      <form action={sendLink} className="space-y-3">
+      <form action={action} className="space-y-4">
+        <input type="hidden" name="next" value={next} />
         <label className="block space-y-1">
-          <span className="text-sm">E-mail</span>
-          <input name="email" type="email" required autoComplete="email" className="w-full rounded-lg border border-line-strong bg-surface px-3 py-2" />
+          <span className="text-sm font-medium">E-mail</span>
+          <input name="email" type="email" required autoComplete="email" className={field} />
+          {err.email && <span role="alert" className="block text-sm text-danger">{err.email}</span>}
         </label>
-        <button type="submit" disabled={status === 'sending'} className="w-full rounded-lg bg-fg px-4 py-2 font-semibold text-bg disabled:opacity-60">
-          Receber link de acesso
+        <label className="block space-y-1">
+          <span className="text-sm font-medium">Senha</span>
+          <input name="password" type="password" required autoComplete="current-password" className={field} />
+          {err.password && <span role="alert" className="block text-sm text-danger">{err.password}</span>}
+        </label>
+        {state.error && <p role="alert" className="text-danger">{state.error}</p>}
+        <button type="submit" disabled={pending} className="w-full rounded-full bg-fg px-4 py-2.5 font-semibold text-bg disabled:opacity-60">
+          Entrar
         </button>
       </form>
-      {status === 'sent' && <p role="status">Enviamos um link para seu e-mail.</p>}
-      {status === 'error' && <p role="alert" className="text-danger">Não foi possível enviar o link. Tente de novo em alguns minutos.</p>}
+      <details className="text-sm">
+        <summary className="cursor-pointer text-muted hover:text-fg">Esqueci minha senha</summary>
+        <p className="mt-2 text-muted">Peça para a equipe do Lobby redefinir sua senha.</p>
+      </details>
+      <p className="text-center text-sm text-muted">
+        Ainda não tem conta? <Link href="/criar-conta" className="font-semibold text-fg underline">Criar conta</Link>
+      </p>
     </div>
   );
 }
