@@ -28,6 +28,9 @@ export type Releases = {
   books: ReleaseItem[] | null;
 };
 
+/** Today in Brazil (yyyy-mm-dd), the reference for "em breve" and "recém-lançados". */
+export const todaySaoPaulo = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+
 export const RELEASES_REVALIDATE_S = 6 * 60 * 60;
 export const BOOKS_REVALIDATE_S = 12 * 60 * 60;
 

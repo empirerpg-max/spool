@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { TrendingStrip } from '@/components/home/TrendingStrip';
 import { TimelineEmpty } from '@/components/social/TimelineEmpty';
 import { TimelineItem } from '@/components/social/TimelineItem';
 import { getCurrentUser } from '@/lib/auth/current-user';
+import { loadReleases, todaySaoPaulo, trending } from '@/lib/home/releases';
 import { cursorHref, parseCursor } from '@/lib/social/cursor';
 import { loadTimeline, timelineSuggestions } from '@/lib/social/timeline';
 
@@ -13,7 +15,8 @@ export default async function TimelinePage({ searchParams }: { searchParams: Pro
   const before = parseCursor(await searchParams);
   const user = await getCurrentUser();
   if (!user) redirect(`/entrar?next=${encodeURIComponent(before ? cursorHref(before) : '/timeline')}`);
-  const { entries, next } = await loadTimeline(before);
+  // The strip only on the first page; release lists are cached for hours and never break the page.
+  const [{ entries, next }, releases] = await Promise.all([loadTimeline(before), before ? null : loadReleases(todaySaoPaulo())]);
   const empty = entries.length === 0 && !before;
 
   return (
@@ -24,6 +27,8 @@ export default async function TimelinePage({ searchParams }: { searchParams: Pro
           <Link href="/publicar" className="rounded-full bg-fg px-5 py-2 text-sm font-semibold text-bg">Publicar</Link>
         )}
       </header>
+
+      {releases && <TrendingStrip items={trending(releases)} />}
 
       {empty ? (
         <TimelineEmpty {...await timelineSuggestions()} />

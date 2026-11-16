@@ -4,11 +4,9 @@ import { HomeTimeline } from '@/components/home/HomeTimeline';
 import { ReleaseRow } from '@/components/home/ReleaseRow';
 import { SearchBox } from '@/components/SearchBox';
 import { getCurrentUser } from '@/lib/auth/current-user';
-import { loadReleases } from '@/lib/home/releases';
+import { loadReleases, todaySaoPaulo } from '@/lib/home/releases';
 import { loadTimeline, timelineSuggestions } from '@/lib/social/timeline';
 import type { TimelineEntry } from '@/lib/social/types';
-
-const todaySaoPaulo = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
 
 const KINDS = [
   { label: 'Filmes', q: 'Duna', cls: 'border-film text-film' },
