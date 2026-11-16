@@ -8,6 +8,8 @@ import { getCurrentUser } from '@/lib/auth/current-user';
 import { createReply } from '@/lib/community/actions';
 import { getTopicWithReplies } from '@/lib/community/queries';
 import { relativeTime } from '@/lib/format';
+import { WatchButton } from '@/components/social/WatchButton';
+import { isWatchingTopic } from '@/lib/social/post-queries';
 import { loadWork } from '../../load';
 
 type Params = Promise<{ kind: string; externalId: string; topicId: string }>;
@@ -34,6 +36,7 @@ export default async function TopicPage({ params, searchParams }: { params: Para
   const page = Math.max(1, Number((await searchParams).pagina) || 1);
   const { work, topic, replies, hasMore } = await load(params, page);
   const user = await getCurrentUser();
+  const watching = user ? await isWatchingTopic(topic.id).catch(() => false) : false;
   const topicPath = `${work.path}/topicos/${topic.id}`;
   const canWrite = Boolean(user?.username) && !user?.banned;
 
@@ -49,7 +52,12 @@ export default async function TopicPage({ params, searchParams }: { params: Para
       ) : (
         <Body text={topic.body} />
       )}
-      {user && <ReportButton topicId={topic.id} />}
+      {user && (
+        <div className="flex flex-wrap items-center gap-4">
+          <WatchButton target="topic" id={topic.id} path={topicPath} initialWatching={watching} />
+          <ReportButton topicId={topic.id} />
+        </div>
+      )}
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">{topic.replyCount === 1 ? '1 resposta' : `${topic.replyCount} respostas`}</h2>

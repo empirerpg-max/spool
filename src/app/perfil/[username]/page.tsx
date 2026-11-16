@@ -6,9 +6,10 @@ import { ProfilePosts } from '@/components/social/ProfilePosts';
 import { ProfileReviews } from '@/components/social/ProfileReviews';
 import { statusLabel } from '@/lib/list/types';
 import { listProfileList, listProfileReviews, type ProfileView } from '@/lib/social/queries';
+import { listPostsByAuthor } from '@/lib/social/post-queries';
 import { handleOf, loadProfile } from './load';
 
-type Params = { params: Promise<{ username: string }>; searchParams: Promise<{ aba?: string }> };
+type Params = { params: Promise<{ username: string }>; searchParams: Promise<{ aba?: string; pagina?: string }> };
 
 const TABS = [['publicacoes', 'Publicações'], ['resenhas', 'Resenhas'], ['lista', 'Lista']] as const;
 type Tab = (typeof TABS)[number][0];
@@ -16,6 +17,11 @@ type Tab = (typeof TABS)[number][0];
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { username } = await params;
   return { title: `@${handleOf(username)} · Lobby` };
+}
+
+async function PostsTab({ profile, page }: { profile: ProfileView; page: number }) {
+  const { posts, hasMore } = await listPostsByAuthor(profile.id, page);
+  return <ProfilePosts posts={posts} isMe={profile.isMe} base={`/@${profile.username}`} page={page} hasMore={hasMore} />;
 }
 
 async function ListTab({ profile }: { profile: ProfileView }) {
@@ -65,7 +71,7 @@ export default async function ProfilePage({ params, searchParams }: Params) {
           </Link>
         ))}
       </nav>
-      {tab === 'publicacoes' && <ProfilePosts profileId={profile.id} isMe={profile.isMe} />}
+      {tab === 'publicacoes' && <PostsTab profile={profile} page={Math.max(1, Number(sp.pagina) || 1)} />}
       {tab === 'resenhas' && <ProfileReviews reviews={await listProfileReviews(profile.id)} />}
       {tab === 'lista' && <ListTab profile={profile} />}
     </section>
