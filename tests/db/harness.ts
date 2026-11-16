@@ -41,11 +41,20 @@ function db(): Pool {
   return pool;
 }
 
-export async function resetDatabase(): Promise<void> {
+/**
+ * Recreates the database from the migrations. With `seedBefore`, `seed` runs just before the first migration
+ * whose file name is >= seedBefore, to check how a migration treats data that already exists in production.
+ */
+export async function resetDatabase(opts: { seedBefore?: string; seed?: () => Promise<void> } = {}): Promise<void> {
   const c = await db().connect();
   try {
     await c.query(SUPABASE_STUB);
+    let seeded = false;
     for (const f of readdirSync(MIGRATIONS).filter((n) => n.endsWith('.sql')).sort()) {
+      if (opts.seed && opts.seedBefore && !seeded && f >= opts.seedBefore) {
+        seeded = true;
+        await opts.seed();
+      }
       await c.query(readFileSync(path.join(MIGRATIONS, f), 'utf8'));
     }
   } finally {

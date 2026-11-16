@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { relativeTime } from '@/lib/format';
 
-export type AlertItem = { id: number; title: string; url: string; createdAt: string; unread: boolean };
+export type AlertItem = { id: number | string; title: string; url: string; createdAt: string; unread: boolean };
 
 export function AlertList({ alerts }: { alerts: AlertItem[] }) {
   if (alerts.length === 0) {

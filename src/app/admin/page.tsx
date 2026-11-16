@@ -21,9 +21,32 @@ type ReportRow = {
   reporter: One<{ username: string | null }>;
   topic: One<TopicRef>;
   post: One<{ body: string; author: One<{ username: string | null }>; topic: One<TopicRef> }>;
+  social_post: One<{ id: string; caption: string; author: One<{ username: string | null }> }>;
+  social_reply: One<{ body: string; post_id: string; author: One<{ username: string | null }> }>;
 };
 
 const TOPIC = 'id, title, body, work:works(kind, external_id), author:profiles!topics_author_id_fkey(username)';
+
+const SOCIAL = 'social_post:social_posts(id, caption, author:profiles!social_posts_author_id_fkey(username)), '
+  + 'social_reply:social_replies(body, post_id, author:profiles!social_replies_author_id_fkey(username))';
+
+/** What was reported, who wrote it, a short excerpt and where to see it. */
+function target(r: ReportRow): { label: string; author: string; text: string; href: string | null; linkText: string } {
+  const sp = one(r.social_post);
+  if (sp) return { label: 'publicação', author: one(sp.author)?.username ?? '?', text: sp.caption, href: `/p/${sp.id}`, linkText: 'Ver a publicação' };
+  const sr = one(r.social_reply);
+  if (sr) return { label: 'resposta a publicação', author: one(sr.author)?.username ?? '?', text: sr.body, href: `/p/${sr.post_id}`, linkText: 'Ver a publicação' };
+  const post = one(r.post);
+  const topic = one(r.topic) ?? one(post?.topic ?? null);
+  const work = one(topic?.work ?? null);
+  return {
+    label: post ? 'resposta' : 'tópico',
+    author: one(post ? post.author : topic?.author ?? null)?.username ?? '?',
+    text: post?.body ?? `${topic?.title ?? ''}\n\n${topic?.body ?? ''}`,
+    href: topic && work ? `${workPath(work.kind, work.external_id)}/topicos/${topic.id}` : null,
+    linkText: 'Ver no tópico',
+  };
+}
 
 function Button({ reportId, action, children, danger }: { reportId: string; action: string; children: string; danger?: boolean }) {
   return (
@@ -40,7 +63,7 @@ export default async function AdminReportsPage() {
   const supabase = await createSessionClient();
   const { data, error } = await supabase
     .from('reports')
-    .select(`id, reason, note, created_at, reporter:profiles!reports_reporter_id_fkey(username), topic:topics(${TOPIC}), post:posts(body, author:profiles!posts_author_id_fkey(username), topic:topics(${TOPIC}))`)
+    .select(`id, reason, note, created_at, reporter:profiles!reports_reporter_id_fkey(username), topic:topics(${TOPIC}), post:posts(body, author:profiles!posts_author_id_fkey(username), topic:topics(${TOPIC})), ${SOCIAL}`)
     .is('resolved_at', null)
     .order('created_at', { ascending: true })
     .limit(100);
@@ -54,20 +77,17 @@ export default async function AdminReportsPage() {
       {reports.length === 0 && <p className="text-muted">Nenhuma denúncia aberta</p>}
       <ul className="space-y-4">
         {reports.map((r) => {
-          const post = one(r.post);
-          const topic = one(r.topic) ?? one(post?.topic ?? null);
-          const work = one(topic?.work ?? null);
-          const author = one(post ? post.author : topic?.author ?? null)?.username ?? '?';
-          const text = (post?.body ?? `${topic?.title ?? ''}\n\n${topic?.body ?? ''}`).slice(0, 300);
-          const href = topic && work ? `${workPath(work.kind, work.external_id)}/topicos/${topic.id}` : null;
+          const t = target(r);
+          const author = t.author;
+          const text = t.text.slice(0, 300);
           return (
             <li key={r.id} className="space-y-2 rounded-lg border border-line p-4">
               <p className="text-sm">
-                <strong>{REASONS[r.reason] ?? r.reason}</strong> · por @{one(r.reporter)?.username ?? '?'} · {relativeTime(r.created_at)} · {post ? 'resposta' : 'tópico'} de @{author}
+                <strong>{REASONS[r.reason] ?? r.reason}</strong> · por @{one(r.reporter)?.username ?? '?'} · {relativeTime(r.created_at)} · {t.label} de @{author}
               </p>
               {r.note && <p className="text-sm italic">“{r.note}”</p>}
               <blockquote className="whitespace-pre-wrap border-l-2 border-line pl-3 text-sm">{text}</blockquote>
-              {href && <Link href={href} className="text-sm underline">Ver no tópico</Link>}
+              {t.href && <Link href={t.href} className="text-sm underline">{t.linkText}</Link>}
               <div className="flex flex-wrap items-center gap-2">
                 <Button reportId={r.id} action="remover">Remover</Button>
                 <Button reportId={r.id} action="ignorar">Ignorar</Button>

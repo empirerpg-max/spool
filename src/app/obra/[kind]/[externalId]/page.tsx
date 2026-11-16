@@ -9,6 +9,8 @@ import { getListItem } from '@/lib/list/queries';
 import { cinemaStatus } from '@/lib/catalog/cinema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { countTopics, listTopics } from '@/lib/community/queries';
+import { WorkPosts } from '@/components/social/WorkPosts';
+import { listPostsByWork } from '@/lib/social/post-queries';
 import { loadWork as load } from './load';
 
 type Params = Promise<{ kind: string; externalId: string }>;
@@ -43,6 +45,16 @@ async function community(workId: string | null, page: number) {
   }
 }
 
+async function workPosts(workId: string | null, signedIn: boolean, page: number) {
+  if (!workId || !signedIn) return null;
+  try {
+    return await listPostsByWork(workId, page);
+  } catch (e) {
+    console.error('[social] work posts failed', e);
+    return null;
+  }
+}
+
 const todaySaoPaulo = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
 const brDate = (iso: string) => iso.split('-').reverse().join('/');
 
@@ -52,16 +64,18 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return { title: r ? `${r.work.title} · Lobby` : 'Lobby' };
 }
 
-export default async function WorkPage({ params, searchParams }: { params: Params; searchParams: Promise<{ pagina?: string }> }) {
+export default async function WorkPage({ params, searchParams }: { params: Params; searchParams: Promise<{ pagina?: string; publicacoes?: string }> }) {
   const { kind, externalId } = await params;
-  const page = Math.max(1, Number((await searchParams).pagina) || 1);
+  const sp = await searchParams;
+  const page = Math.max(1, Number(sp.pagina) || 1);
+  const postsPage = Math.max(1, Number(sp.publicacoes) || 1);
   const result = await load(kind, externalId);
   if (!result) {
     return <p role="status" className="py-16 text-center text-warn">Não foi possível carregar esta obra agora. Tente de novo em instantes.</p>;
   }
   const { work, stale } = result;
   const [topics, topicCount, user] = await Promise.all([community(result.id, page), topicTotal(result.id), getCurrentUser()]);
-  const item = await listItem(result.id, Boolean(user));
+  const [item, posts] = await Promise.all([listItem(result.id, Boolean(user)), workPosts(result.id, Boolean(user), postsPage)]);
   const cinema = work.kind === 'movie' ? cinemaStatus(work, todaySaoPaulo()) : null;
   const sectionTitle = 'font-display text-2xl font-bold';
 
@@ -84,7 +98,7 @@ export default async function WorkPage({ params, searchParams }: { params: Param
         />
       </WorkHero>
 
-      <SectionNav items={[{ id: 'comunidade', label: 'Comunidade' }, { id: 'sobre', label: 'Sobre' }, { id: 'onde-assistir', label: work.kind === 'book' ? 'Onde comprar' : 'Onde assistir' }]} />
+      <SectionNav items={[{ id: 'comunidade', label: 'Comunidade' }, ...(result.id ? [{ id: 'publicacoes', label: 'Publicações' }] : []), { id: 'sobre', label: 'Sobre' }, { id: 'onde-assistir', label: work.kind === 'book' ? 'Onde comprar' : 'Onde assistir' }]} />
 
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-12">
@@ -98,6 +112,11 @@ export default async function WorkPage({ params, searchParams }: { params: Param
               signedIn={Boolean(user)}
             />
           </section>
+
+          {result.id && (
+            <WorkPosts workId={result.id} workPath={result.path} signedIn={Boolean(user)}
+              posts={posts?.posts ?? []} hasMore={posts?.hasMore ?? false} page={postsPage} />
+          )}
 
           <section id="sobre" className="scroll-mt-32 space-y-4">
             <h2 className={sectionTitle}>Sobre</h2>
