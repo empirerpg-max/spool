@@ -1,0 +1,39 @@
+# Avisos diários: pede ao site para conferir as obras das listas e mandar os avisos.
+# Precisa do segredo CRON_SECRET (o mesmo valor cadastrado na Vercel). Veja docs/setup-chaves.md.
+name: Avisos diários
+
+on:
+  schedule:
+    - cron: '17 9 * * *' # 06:17 no horário de Brasília
+  workflow_dispatch:
+
+concurrency:
+  group: daily-alerts
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Conferir obras em lotes
+        shell: bash
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE: https://spool-eta-eight.vercel.app
+        run: |
+          set -u
+          if [ -z "$CRON_SECRET" ]; then echo "Falta o segredo CRON_SECRET"; exit 1; fi
+          remaining=""
+          for i in $(seq 1 40); do
+            out=""
+            for try in 1 2 3; do
+              if out=$(curl --fail --silent --show-error --max-time 70 -X POST -H "Authorization: Bearer $CRON_SECRET" "$SITE/api/tarefas/diaria"); then break; fi
+              echo "Lote $i: tentativa $try falhou, tentando de novo em 20s"; out=""; sleep 20
+            done
+            if [ -z "$out" ]; then echo "O site não respondeu ao lote $i."; exit 1; fi
+            echo "Lote $i: $out"
+            remaining=$(echo "$out" | python3 -c 'import json,sys; print(json.load(sys.stdin)["remaining"])')
+            if [ "$remaining" = "0" ]; then echo "Tudo conferido."; exit 0; fi
+          done
+          echo "Ficaram $remaining obras sem conferir hoje."
+          exit 1
