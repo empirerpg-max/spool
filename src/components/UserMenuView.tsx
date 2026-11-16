@@ -14,6 +14,7 @@ export function UserMenuView({ user, path }: { user: CurrentUser | null; path: s
     <div className="flex items-center gap-4 whitespace-nowrap text-sm font-medium">
       <Link href="/minha-lista">Minha lista</Link>
       {user.isAdmin && <Link href="/admin" className="hidden sm:inline">Admin</Link>}
+      {user.username && <Link href={`/@${user.username}`} className="hidden sm:inline">Meu perfil</Link>}
       {user.username ? (
         <Link href="/minha-conta" className="hidden max-w-[12rem] truncate sm:inline">@{user.username}</Link>
       ) : (

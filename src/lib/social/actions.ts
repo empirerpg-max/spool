@@ -37,3 +37,21 @@ export async function unblock(targetId: string, path: string): Promise<SocialAct
 export async function unmute(targetId: string, path: string): Promise<SocialActionState> {
   return run(targetId, path, (db, me, t) => db.from('mutes').delete().eq('muter_id', me).eq('muted_id', t));
 }
+
+export async function follow(targetId: string, path: string): Promise<SocialActionState> {
+  return run(targetId, path, (db, _me, t) => db.from('follows').insert({ followee_id: t }), { duplicateOk: true });
+}
+
+export async function unfollow(targetId: string, path: string): Promise<SocialActionState> {
+  return run(targetId, path, (db, me, t) => db.from('follows').delete().eq('follower_id', me).eq('followee_id', t));
+}
+
+/** Also ends following both ways (done by the database). The person is not told. */
+export async function block(targetId: string, path: string): Promise<SocialActionState> {
+  return run(targetId, path, (db, _me, t) => db.from('blocks').insert({ blocked_id: t }), { duplicateOk: true });
+}
+
+/** Hides the person from my timeline and alerts only. The person is not told. */
+export async function mute(targetId: string, path: string): Promise<SocialActionState> {
+  return run(targetId, path, (db, _me, t) => db.from('mutes').insert({ muted_id: t }), { duplicateOk: true });
+}
