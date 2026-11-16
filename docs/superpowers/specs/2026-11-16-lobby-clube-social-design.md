@@ -1,7 +1,7 @@
 # Lobby — Clube social, telas iniciais e avaliações
 
 **Data:** 2026-11-16
-**Status:** em revisão
+**Status:** aguardando aprovação
 
 ## 1. Intenção e o porquê
 
@@ -19,6 +19,12 @@
 
 **Seguir** (decisão do usuário: mão única)
 - Seguir/deixar de seguir sem aprovação.
+
+**Bloquear e silenciar** (decisão do usuário: os dois, a pessoa escolhe)
+- **Bloquear:** a pessoa bloqueada deixa de te seguir na hora e não consegue te seguir de novo; não vê seu perfil nem suas publicações; não responde nem curta o que é seu. Você também deixa de ver o que é dela (perfil, publicações, respostas). Ela não é avisada.
+- **Silenciar:** mais leve — a pessoa some da sua timeline e dos seus avisos, mas continua podendo te seguir e ver seu perfil. Ela não é avisada.
+- Os dois se desfazem em Minha conta → "Bloqueados e silenciados".
+- Bloqueio vale também nas respostas dos tópicos das comunidades? **Não** (*minha decisão*): as comunidades são espaço comum da obra; lá a defesa continua sendo denunciar. O bloqueio vale para perfil, publicações, respostas a publicações, curtidas, seguir e avisos.
 
 **Publicações** (decisões do usuário: sempre com um filme, série ou livro citado + legenda; início de conversa; curtidas)
 - Cada publicação tem: obra citada (obrigatória), legenda (obrigatória), marcação "contém spoiler" (opcional — *minha decisão*, igual aos tópicos).
@@ -63,6 +69,7 @@
 - Mensagens privadas, grupos/comunidades criadas por usuários, moderadores voluntários.
 - Publicações sem obra citada (regra do usuário).
 - Perfis privados / aprovação de seguidores (seguir é de mão única).
+- Bloqueio dentro das comunidades das obras (lá vale a denúncia).
 - Curtir respostas, republicar ("repost"), citar publicação.
 - Lista de espera para quem não tem convite.
 
