@@ -1,39 +1,19 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { SearchBox } from '@/components/SearchBox';
 import { searchCatalog } from '@/lib/catalog/search';
-import { workPath } from '@/lib/catalog/kind';
-import type { SearchHit, WorkKind } from '@/lib/catalog/types';
+import type { WorkKind } from '@/lib/catalog/types';
+import { SearchHitItem } from '@/components/SearchHitItem';
 
 export const metadata: Metadata = { title: 'Busca · Lobby' };
 
 const GROUPS: Array<[WorkKind, string]> = [['movie', 'Filmes'], ['series', 'Séries'], ['book', 'Livros']];
-
-function Hit({ hit }: { hit: SearchHit }) {
-  return (
-    <li>
-      <Link href={workPath(hit.kind, hit.externalId)} className="flex items-center gap-3 rounded-lg p-2 hover:bg-surface-2">
-        {hit.posterUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={hit.posterUrl} alt="" width={46} height={69} className="h-[69px] w-[46px] rounded object-cover" />
-        ) : (
-          <div className="h-[69px] w-[46px] rounded bg-surface-2" />
-        )}
-        <span>
-          {hit.title}
-          {hit.year && <span className="text-muted"> ({hit.year})</span>}
-        </span>
-      </Link>
-    </li>
-  );
-}
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
   const q = ((await searchParams).q ?? '').trim();
   const { hits, unavailable } = await searchCatalog(q);
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-4xl space-y-8">
       <SearchBox defaultValue={q} />
       {unavailable.includes('tmdb') && <p role="status" className="text-warn">Filmes e séries indisponíveis no momento</p>}
       {unavailable.includes('books') && <p role="status" className="text-warn">Livros indisponíveis no momento</p>}
@@ -43,8 +23,8 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         if (!group.length) return null;
         return (
           <section key={kind} className="space-y-2">
-            <h2 className="text-xl font-semibold">{label}</h2>
-            <ul>{group.map((h) => <Hit key={`${h.kind}-${h.externalId}`} hit={h} />)}</ul>
+            <h2 className="font-display text-xl font-bold">{label}</h2>
+            <ul className="grid gap-1 sm:grid-cols-2">{group.map((h) => <SearchHitItem key={`${h.kind}-${h.externalId}`} hit={h} />)}</ul>
           </section>
         );
       })}
