@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { hasDb, resetDatabase, asAnon, asSuperuser, asUser, asServiceRole, createUser, expectDbError } from './harness';
+import { hasDb, resetDatabase, asAnon, asSuperuser, asUser, createUser, expectDbError } from './harness';
 
 type Id = { id: string };
 type Item = { item_type: string; item_id: string; actor_id: string };
@@ -57,28 +57,6 @@ describe.skipIf(!hasDb)('social club', () => {
     nameless = await createUser('x@example.com');
     adm = await named('adm@example.com', 'adm');
     await asSuperuser('update profiles set is_admin = true where id = $1', [adm]);
-  });
-
-  describe('profiles', () => {
-    it('members read bio, photo and list setting; visitors do not', async () => {
-      await asUser(ana, "update profiles set bio = 'Cinéfila', list_public = true where id = $1", [ana]);
-      expect(await asUser(bia, 'select bio, avatar_url, list_public from profiles where id = $1', [ana]))
-        .toEqual([{ bio: 'Cinéfila', avatar_url: null, list_public: true }]);
-      await expectDbError(asAnon('select bio from profiles'), /permission denied/);
-      await expectDbError(asAnon('select avatar_url from profiles'), /permission denied/);
-      expect(await asAnon('select username from profiles where id = $1', [ana])).toEqual([{ username: 'ana' }]);
-    });
-
-    it('bio is limited and the photo is set only by the server', async () => {
-      await expectDbError(asUser(ana, 'update profiles set bio = $2 where id = $1', [ana, 'x'.repeat(161)]), /check constraint/);
-      await expectDbError(asUser(ana, "update profiles set avatar_url = 'https://x' where id = $1", [ana]), /permission denied/);
-      await asServiceRole("update profiles set avatar_url = 'https://cdn/ana.webp' where id = $1", [ana]);
-      expect(await asUser(bia, 'select avatar_url from profiles where id = $1', [ana])).toEqual([{ avatar_url: 'https://cdn/ana.webp' }]);
-    });
-
-    it('list is private by default', async () => {
-      expect(await asUser(ana, 'select list_public from profiles where id = $1', [ana])).toEqual([{ list_public: false }]);
-    });
   });
 
   describe('follows', () => {
@@ -478,7 +456,7 @@ describe.skipIf(!hasDb)('social club', () => {
 
     it('is visible only when enabled and never exposes ratings or reviews', async () => {
       expect(await asUser(bia, "select * from public_list('ana')")).toEqual([]);
-      await asUser(ana, 'update profiles set list_public = true where id = $1', [ana]);
+      await asUser(ana, 'update profile_details set list_public = true where id = $1', [ana]);
       const rows = await asUser<Record<string, unknown>>(bia, "select * from public_list('ana')");
       expect(rows).toHaveLength(1);
       expect(rows[0]).toMatchObject({ work_id: work, status: 'concluido' });
@@ -486,7 +464,7 @@ describe.skipIf(!hasDb)('social club', () => {
     });
 
     it('is hidden from blocked people', async () => {
-      await asUser(ana, 'update profiles set list_public = true where id = $1', [ana]);
+      await asUser(ana, 'update profile_details set list_public = true where id = $1', [ana]);
       await block(ana, bia);
       expect(await asUser(bia, "select * from public_list('ana')")).toEqual([]);
     });

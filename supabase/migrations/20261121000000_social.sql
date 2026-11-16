@@ -4,16 +4,44 @@
 
 -- Perfil ---------------------------------------------------------------------------------------
 
-alter table profiles
-  add column bio text check (char_length(bio) <= 160),
-  add column avatar_url text,
-  add column list_public boolean not null default false;
+-- Biografia, foto e "lista pública" ficam numa tabela à parte (não em profiles, que visitantes leem e que
+-- não esconde nada com bloqueio): só membros leem, e quem tem bloqueio com a pessoa não vê nada.
+create table profile_details (
+  id uuid primary key references profiles on delete cascade,
+  bio text check (char_length(bio) <= 160),
+  avatar_url text,
+  list_public boolean not null default false,
+  updated_at timestamptz not null default now()
+);
 
--- Visitantes continuam lendo só as colunas de antes; membros leem também biografia, foto e se a lista é pública.
-grant select (bio, avatar_url, list_public) on profiles to authenticated;
-grant update (bio, list_public) on profiles to authenticated;
--- A foto é gravada pelo servidor do Lobby (chave secreta) depois de conferir o arquivo.
-grant select (id, avatar_url), update (avatar_url) on profiles to service_role;
+-- Toda conta tem a sua linha: as novas na hora do cadastro, as que já existem agora.
+create function create_profile_details() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into profile_details (id) values (new.id) on conflict do nothing;
+  return null;
+end;
+$$;
+create trigger f_profile_details after insert on profiles for each row execute function create_profile_details();
+insert into profile_details (id) select id from profiles on conflict do nothing;
+
+-- Conta suspensa não muda o próprio perfil (o servidor e o Admin continuam podendo).
+create function check_profile_edit() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if auth.uid() is not null and auth.uid() = new.id
+     and exists (select 1 from profiles where id = new.id and banned_at is not null) then
+    raise exception 'banned' using errcode = 'P0001';
+  end if;
+  if tg_table_name = 'profile_details' then
+    new.updated_at := now();
+  end if;
+  return new;
+end;
+$$;
+create trigger a_profile_edit before update on profile_details for each row execute function check_profile_edit();
+create trigger a_profile_edit before update of display_name on profiles for each row
+  when (new.display_name is distinct from old.display_name) execute function check_profile_edit();
 
 -- Seguir, bloquear, silenciar ------------------------------------------------------------------
 
@@ -61,6 +89,20 @@ language sql stable security definer set search_path = public as $$
     else blocked_between(a, b)
   end;
 $$;
+
+-- Perfil: regras de leitura e escrita (dependem de is_blocked).
+alter table profile_details enable row level security;
+create policy "details visible to members" on profile_details for select to authenticated
+  using (not is_blocked(auth.uid(), id));
+create policy "edit own details" on profile_details for update to authenticated
+  using (id = auth.uid()) with check (id = auth.uid());
+
+-- Visitantes não leem nada daqui; cada membro muda só a própria biografia e a lista pública.
+revoke all on profile_details from anon, authenticated;
+grant select (id, bio, avatar_url, list_public, updated_at) on profile_details to authenticated;
+grant update (bio, list_public) on profile_details to authenticated;
+-- A foto é gravada pelo servidor do Lobby (chave secreta) depois de conferir o arquivo.
+grant select (id, avatar_url), update (avatar_url) on profile_details to service_role;
 
 -- Publicações, respostas, curtidas ----------------------------------------------------------
 
@@ -205,7 +247,7 @@ $$;
 -- Avisos ---------------------------------------------------------------------------------------
 
 -- Cria um aviso, exceto para a própria pessoa, entre pessoas com bloqueio, ou de quem foi silenciado.
--- Curtir/seguir de novo não repete um aviso ainda não lido.
+-- Curtir/seguir de novo não repete um aviso ainda não lido, nem um do último dia (mesmo já lido).
 create function add_activity(p_user uuid, p_kind text, p_actor uuid, p_post uuid, p_topic uuid) returns void
 language plpgsql security definer set search_path = public as $$
 begin
@@ -215,7 +257,8 @@ begin
   if p_kind in ('follow', 'like') and exists (
     select 1 from activity
     where user_id = p_user and kind = p_kind and actor_id = p_actor
-      and social_post_id is not distinct from p_post and read_at is null
+      and social_post_id is not distinct from p_post
+      and (read_at is null or created_at > now() - interval '24 hours')
   ) then
     return;
   end if;
@@ -329,6 +372,10 @@ create trigger e_like_counter after insert or delete on social_likes for each ro
 create trigger b_watch_target before insert on watches for each row execute function check_watch_target();
 
 create trigger f_auto_watch after insert on topics for each row execute function auto_watch();
+-- Tópicos que já existiam: quem criou passa a acompanhar, como acontece com os novos.
+insert into watches (user_id, topic_id)
+  select author_id, id from topics where deleted_at is null
+  on conflict do nothing;
 create trigger f_watch_activity after insert on posts for each row execute function topic_reply_activity();
 
 -- RLS ------------------------------------------------------------------------------------------
@@ -352,16 +399,20 @@ create policy "own blocks" on blocks for all to authenticated
 create policy "own mutes" on mutes for all to authenticated
   using (muter_id = auth.uid()) with check (muter_id = auth.uid());
 
+-- O Admin vê tudo (inclusive o que foi denunciado por alguém que tem bloqueio com ele).
 create policy "visible social posts" on social_posts for select to authenticated
-  using ((deleted_at is null or is_admin()) and not is_blocked(auth.uid(), author_id));
+  using (is_admin() or (deleted_at is null and not is_blocked(auth.uid(), author_id)));
 create policy "create own social posts" on social_posts for insert to authenticated with check (author_id = auth.uid());
 
 -- A resposta some também quando a publicação some (removida ou de alguém com bloqueio).
 create policy "visible social replies" on social_replies for select to authenticated
   using (
-    (deleted_at is null or is_admin())
-    and not is_blocked(auth.uid(), author_id)
-    and exists (select 1 from social_posts p where p.id = post_id)
+    is_admin()
+    or (
+      deleted_at is null
+      and not is_blocked(auth.uid(), author_id)
+      and exists (select 1 from social_posts p where p.id = post_id)
+    )
   );
 create policy "create own social replies" on social_replies for insert to authenticated with check (author_id = auth.uid());
 
@@ -425,18 +476,27 @@ language sql security definer set search_path = public as $$
   update activity set read_at = now() where user_id = auth.uid() and read_at is null;
 $$;
 
--- O sino conta os avisos da lista e os avisos sociais.
+-- O sino conta os avisos da lista e os avisos sociais — só os que ainda apontam para algo no ar
+-- (publicação não removida e sem bloqueio com o autor; tópico não removido), como em /avisos.
 create or replace function unread_count() returns int
 language sql stable security definer set search_path = public as $$
   select (
     (select count(*) from notifications where user_id = auth.uid() and read_at is null)
-    + (select count(*) from activity where user_id = auth.uid() and read_at is null)
+    + (select count(*) from activity a
+       where a.user_id = auth.uid() and a.read_at is null
+         and (a.social_post_id is null or exists (
+           select 1 from social_posts p
+           where p.id = a.social_post_id and p.deleted_at is null and not blocked_between(a.user_id, p.author_id)))
+         and (a.topic_id is null or exists (
+           select 1 from topics t where t.id = a.topic_id and t.deleted_at is null)))
   )::int;
 $$;
 
 -- Timeline: publicações e resenhas de quem sigo + respostas novas nas conversas que acompanho.
 -- Montada na hora; nunca mostra quem silenciei nem quem tem bloqueio comigo.
-create function timeline(p_before timestamptz default null, p_limit int default 20)
+-- "Carregar mais" continua depois do último item visto: data e id juntos, para não pular nem repetir
+-- itens com a mesma data (sem p_before_id, usa só a data).
+create function timeline(p_before timestamptz default null, p_limit int default 20, p_before_id uuid default null)
 returns table (item_type text, item_id uuid, created_at timestamptz, actor_id uuid, work_id uuid, social_post_id uuid, topic_id uuid)
 language sql stable security definer set search_path = public as $$
   with me as (select auth.uid() as uid),
@@ -478,7 +538,11 @@ language sql stable security definer set search_path = public as $$
   select i.item_type, i.item_id, i.created_at, i.actor_id, i.work_id, i.social_post_id, i.topic_id
   from items i
   where i.actor_id not in (select id from hidden)
-    and (p_before is null or i.created_at < p_before)
+    and (
+      p_before is null
+      or (p_before_id is null and i.created_at < p_before)
+      or (p_before_id is not null and (i.created_at, i.item_id) < (p_before, p_before_id))
+    )
   order by i.created_at desc, i.item_id desc
   limit least(greatest(coalesce(p_limit, 20), 1), 50);
 $$;
@@ -496,8 +560,8 @@ language sql stable security definer set search_path = public as $$
     select author_id from posts where created_at > now() - interval '30 days' and deleted_at is null
   ),
   counts as (select author_id, count(*)::int as n from recent group by author_id)
-  select p.id, p.username, p.display_name, p.avatar_url, coalesce(c.n, 0)
-  from profiles p left join counts c on c.author_id = p.id, me
+  select p.id, p.username, p.display_name, d.avatar_url, coalesce(c.n, 0)
+  from profiles p left join profile_details d on d.id = p.id left join counts c on c.author_id = p.id, me
   where me.uid is not null and p.id <> me.uid and p.username is not null and p.banned_at is null
     and not exists (select 1 from follows f where f.follower_id = me.uid and f.followee_id = p.id)
     and not exists (select 1 from mutes m where m.muter_id = me.uid and m.muted_id = p.id)
@@ -511,8 +575,8 @@ create function public_list(p_username text)
 returns table (work_id uuid, status text, updated_at timestamptz)
 language sql stable security definer set search_path = public as $$
   select li.work_id, li.status, li.updated_at
-  from list_items li join profiles p on p.id = li.user_id
-  where p.username = p_username and p.list_public
+  from list_items li join profiles p on p.id = li.user_id join profile_details d on d.id = p.id
+  where p.username = p_username and d.list_public
     and auth.uid() is not null and not blocked_between(auth.uid(), p.id)
   order by li.updated_at desc;
 $$;
@@ -576,11 +640,11 @@ $$;
 revoke execute on function blocked_between(uuid, uuid), add_activity(uuid, text, uuid, uuid, uuid) from public, anon, authenticated;
 revoke execute on function
   is_blocked(uuid, uuid), delete_social_post(uuid), delete_social_reply(uuid), mark_activity_read(),
-  timeline(timestamptz, int), suggested_people(int), public_list(text)
+  timeline(timestamptz, int, uuid), suggested_people(int), public_list(text)
   from public, anon;
 grant execute on function
   is_blocked(uuid, uuid), delete_social_post(uuid), delete_social_reply(uuid), mark_activity_read(),
-  timeline(timestamptz, int), suggested_people(int), public_list(text)
+  timeline(timestamptz, int, uuid), suggested_people(int), public_list(text)
   to authenticated;
 
 -- Fotos de perfil: pasta pública "avatars" no armazenamento do Supabase (o servidor grava, todos leem).
@@ -588,6 +652,10 @@ do $$
 begin
   if exists (select 1 from pg_namespace where nspname = 'storage')
      and exists (select 1 from information_schema.tables where table_schema = 'storage' and table_name = 'buckets') then
-    insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true) on conflict (id) do nothing;
+    begin
+      insert into storage.buckets (id, name, public) values ('avatars', 'avatars', true) on conflict (id) do nothing;
+    exception when others then
+      raise notice 'avatars bucket not created: %', sqlerrm;
+    end;
   end if;
 end $$;
