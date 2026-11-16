@@ -117,37 +117,44 @@ Se você **não** colou o SQL antes, rode o mesmo **Run workflow** com o campo v
 
 Depois disso, não precisa fazer mais nada: cada etapa nova aplica as próprias mudanças. Se uma execução falhar, a aba **Actions** mostra um ❌ — me mande o print do erro.
 
-## 7. Login (Supabase Auth)
+## 7. Contas (e-mail e senha, só com convite)
 
-### 7a. Endereços do site (obrigatório)
+### 7a. Endereços do site
 
 Supabase → **Authentication** → **URL Configuration**:
 
 - **Site URL:** `https://spool-eta-eight.vercel.app`
-- **Redirect URLs** → **Add URL**, uma de cada vez:
-  - `https://spool-eta-eight.vercel.app/**`
-  - `https://*-lobby-9cae.vercel.app/**` (os links de teste da Vercel)
-- **Save**.
+- **Redirect URLs** → **Add URL**: `https://spool-eta-eight.vercel.app/**` e `https://*-lobby-9cae.vercel.app/**` → **Save**.
 
-### 7b. Entrar com Google (recomendado, gratuito)
+### 7b. Desligar o e-mail de confirmação (por enquanto)
 
-1. **Google Cloud** (mesmo projeto `lobby` da Books API) → **APIs e serviços → Tela de consentimento OAuth** (*Google Auth Platform*):
-   - Tipo **Externo**, nome do app **Lobby**, seu e-mail de suporte → salvar.
-   - Em **Público-alvo**, clique em **Publicar app** (senão só usuários de teste conseguem entrar).
-2. **APIs e serviços → Credenciais → + Criar credenciais → ID do cliente OAuth**:
-   - Tipo: **Aplicativo da Web**, nome `Lobby`.
-   - **URIs de redirecionamento autorizados → + Adicionar URI:** `https://SEU_PROJECT_ID.supabase.co/auth/v1/callback` (o mesmo código do `SUPABASE_PROJECT_ID`).
-   - **Criar** → copie o **ID do cliente** e a **Chave secreta do cliente**.
-3. **Supabase → Authentication → Sign In / Providers → Google**: ative, cole o **Client ID** e o **Client Secret** → **Save**.
-4. **Vercel → Environment Variables**: crie `NEXT_PUBLIC_GOOGLE_LOGIN` = `on` (tipo **Config**, Production e Preview) → **Redeploy**.
+Sem domínio próprio, o Supabase não consegue mandar e-mail para quem é de fora. Como o convite já controla quem entra:
 
-### 7c. Entrar por e-mail (limitado por enquanto)
+1. Supabase → **Authentication** → **Sign In / Providers** → **Email**.
+2. Deixe **Enable Email provider** ligado.
+3. **Desligue "Confirm email"** → **Save**.
 
-O e-mail embutido do Supabase só entrega para pessoas da sua equipe no Supabase e poucas mensagens por hora. Para abrir para todo mundo é preciso um provedor de e-mail (ex.: Resend) com **um domínio próprio** (ex.: `lobby.com.br`). Fica para quando houver domínio; até lá, o Google é a porta de entrada.
+### 7c. Criar a sua conta (a primeira vira administradora)
 
-## 8. Virar administrador
+1. Abra `https://spool-eta-eight.vercel.app/criar-conta`.
+2. Enquanto o Lobby não tem administrador, a tela não pede convite. Preencha seus dados e crie a conta: ela já nasce como **administradora**.
+3. Escolha seu nome de usuário (@).
+4. O link **Admin** aparece no topo. Em **Admin → Convites**, gere um código para cada pessoa que você quiser chamar.
 
-1. Entre no Lobby uma vez (com Google) e escolha seu nome de usuário.
-2. Supabase → **Table Editor** → tabela **profiles** → ache sua linha (pelo `username`).
-3. Clique na célula **is_admin**, troque para **true** → **Save**.
-4. Recarregue o Lobby: o link **Admin** aparece no topo. Lá ficam as denúncias e os domínios bloqueados.
+> Faça isso **antes** de divulgar o endereço do site: quem criar a primeira conta vira administrador. Essa porta abre uma única vez: depois disso, só com convite.
+
+> Contas só podem ser criadas pelo site. Os botões "Add user" e "Invite user" do painel do Supabase não funcionam (o banco recusa contas sem os dados do cadastro).
+
+### 7e. E-mail de contato
+
+Os Termos e a Política de Privacidade precisam de um e-mail para pedidos (exclusão de conta, LGPD, recursos de moderação). Na Vercel, crie a variável `NEXT_PUBLIC_CONTACT_EMAIL` (tipo **Config**, Production e Preview) com esse e-mail e faça **Redeploy**.
+
+### 7d. Esqueceu a senha?
+
+Enquanto o Lobby não envia e-mails, quem esquecer a senha pede para você. Em **Admin → Usuários**, digite o e-mail da pessoa e gere uma senha temporária. A pessoa entra com ela e troca em **Minha conta**.
+
+## 8. Virar administrador (caso precise de outro admin)
+
+1. A pessoa cria a conta normalmente (com convite) e escolhe o @.
+2. Supabase → **Table Editor** → tabela **profiles** → linha da pessoa (pelo `username`).
+3. Célula **is_admin** → **true** → **Save**.

@@ -27,6 +27,10 @@ alter default privileges in schema public grant execute on functions to anon, au
 create schema auth;
 grant usage on schema auth to anon, authenticated;
 create table auth.users (id uuid primary key default gen_random_uuid(), email text, raw_user_meta_data jsonb default '{}');
+create table auth.sessions (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users on delete cascade);
+create table auth.refresh_tokens (id bigserial primary key, user_id text, session_id uuid);
+do $$ begin create role service_role nologin bypassrls; exception when duplicate_object then null; end $$;
+grant usage on schema public to service_role;
 create function auth.uid() returns uuid language sql stable as
   $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
 grant execute on function auth.uid() to anon, authenticated;
@@ -69,6 +73,12 @@ export function asSuperuser<T = Record<string, unknown>>(sql: string, params: un
   return tx<T>(async () => {}, sql, params);
 }
 
+export function asServiceRole<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
+  return tx<T>(async (c) => {
+    await c.query('set local role service_role');
+  }, sql, params);
+}
+
 export function asAnon<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
   return tx<T>(async (c) => {
     await c.query('set local role anon');
@@ -82,9 +92,27 @@ export function asUser<T = Record<string, unknown>>(userId: string, sql: string,
   }, sql, params);
 }
 
-export async function createUser(email: string): Promise<string> {
-  const [row] = await asSuperuser<{ id: string }>('insert into auth.users(email) values ($1) returning id', [email]);
+export type SignupMeta = Partial<{ first_name: string; last_name: string; birth_date: string; terms_version: string; invite_code: string }>;
+
+const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+export const randomCode = () => Array.from({ length: 8 }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
+
+/** Inserts an auth user the way Supabase sign-up does: personal data and invite in raw_user_meta_data. */
+export async function signUpRaw(email: string, meta: SignupMeta | null): Promise<string> {
+  const [row] = await asSuperuser<{ id: string }>(
+    "insert into auth.users(email, raw_user_meta_data) values ($1, coalesce($2::jsonb, '{}'::jsonb)) returning id",
+    [email, meta ? JSON.stringify(meta) : null],
+  );
   return row.id;
+}
+
+/** A regular, valid sign-up with a fresh invite (so tests don't depend on the first-account bootstrap). */
+export async function createUser(email: string, meta: SignupMeta = {}): Promise<string> {
+  const code = meta.invite_code ?? randomCode();
+  if (!meta.invite_code) await asSuperuser('insert into invites(code) values ($1)', [code]);
+  return signUpRaw(email, {
+    first_name: 'Teste', last_name: 'Silva', birth_date: '1990-01-01', terms_version: '2026-11-16', ...meta, invite_code: code,
+  });
 }
 
 export async function expectDbError(p: Promise<unknown>, message: string | RegExp): Promise<void> {
