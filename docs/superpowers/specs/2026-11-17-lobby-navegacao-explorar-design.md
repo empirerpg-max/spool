@@ -1,7 +1,7 @@
 # Lobby — Navegação nova, Explorar (catálogo) e busca de pessoas
 
 **Data:** 2026-11-17
-**Status:** aguardando aprovação
+**Status:** aprovado
 
 ## 1. Intenção e o porquê
 
