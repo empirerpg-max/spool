@@ -105,6 +105,21 @@ describe('fetching', () => {
     expect(workPath(items[0].kind, items[0].externalId)).toBe('/obra/livro/OL10W');
   });
 
+  it('when Google Books refuses (daily limit), books come from Open Library recent Portuguese fiction', async () => {
+    const f = fakeFetch([
+      { match: /googleapis\.com/, status: 429 },
+      { match: /openlibrary\.org\/search\.json\?.*language%3Apor/, body: { docs: [
+        { key: '/works/OL5W', title: 'Com capa', first_publish_year: 2026, cover_i: 42 },
+        { key: '/works/OL6W', title: 'Sem capa', first_publish_year: 2026 },
+        { key: '/works/OL5W', title: 'Repetido', first_publish_year: 2026, cover_i: 43 },
+      ] } },
+    ]);
+    const items = await bookReleases('2026-11-16', f);
+    expect(items.map((i) => [i.title, i.externalId, i.posterUrl])).toEqual([
+      ['Com capa', 'OL5W', 'https://covers.openlibrary.org/b/id/42-M.jpg'],
+    ]);
+  });
+
   it('a TMDB failure is reported as an error for that row', async () => {
     const f = fakeFetch([{ match: /now_playing/, status: 500 }]);
     await expect(nowPlaying(f)).rejects.toThrow();

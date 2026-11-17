@@ -134,17 +134,50 @@ async function openLibraryId(c: BookCandidate, fetchImpl: FetchImpl): Promise<st
   }
 }
 
-export async function bookReleases(today: string, fetchImpl: FetchImpl = fetch): Promise<ReleaseItem[]> {
+async function googleBookReleases(today: string, fetchImpl: FetchImpl): Promise<ReleaseItem[]> {
   const json = await searchGoogleBooks('subject:fiction', { langRestrict: 'pt', orderBy: 'newest', printType: 'books', maxResults: '40' }, fetchImpl);
   const candidates = bookCandidates(json, today).slice(0, MAX_BOOKS);
   const ids = await Promise.all(candidates.map((c) => openLibraryId(c, fetchImpl)));
-  const seen = new Set<string>();
   return candidates.flatMap((c, i): ReleaseItem[] => {
     const id = ids[i];
-    if (!id || seen.has(id)) return [];
-    seen.add(id);
-    return [{ kind: 'book', externalId: id, title: c.title, posterUrl: c.posterUrl, date: c.date, popularity: 0 }];
+    return id ? [{ kind: 'book', externalId: id, title: c.title, posterUrl: c.posterUrl, date: c.date, popularity: 0 }] : [];
   });
+}
+
+/** Open Library: Portuguese fiction first published this year or last, with a cover, most read first. */
+export function openLibraryRecent(json: unknown): ReleaseItem[] {
+  return arr((json as Json)?.docs).flatMap((d): ReleaseItem[] => {
+    const id = /^\/works\/(OL\d+W)$/.exec(str(d?.key) ?? '')?.[1];
+    const title = str(d?.title);
+    const cover = typeof d?.cover_i === 'number' && d.cover_i > 0 ? d.cover_i : null;
+    if (!id || !title || !cover) return [];
+    return [{ kind: 'book', externalId: id, title, posterUrl: `https://covers.openlibrary.org/b/id/${cover}-M.jpg`, date: null, popularity: 0 }];
+  });
+}
+
+async function openLibraryBookReleases(today: string, fetchImpl: FetchImpl): Promise<ReleaseItem[]> {
+  const year = Number(today.slice(0, 4));
+  const params = new URLSearchParams({
+    q: `language:por subject:fiction first_publish_year:[${year - 1} TO ${year}]`,
+    sort: 'readinglog', limit: '40', fields: 'key,title,first_publish_year,cover_i',
+  });
+  const res = await fetchImpl(`https://openlibrary.org/search.json?${params}`, { headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error(`openlibrary ${res.status}`);
+  return openLibraryRecent(await res.json());
+}
+
+/**
+ * Recent books. Google Books gives real Brazilian release dates but has a small daily limit;
+ * whatever it can't fill comes from Open Library. Fails only when both fail.
+ */
+export async function bookReleases(today: string, fetchImpl: FetchImpl = fetch): Promise<ReleaseItem[]> {
+  const [g, ol] = await Promise.allSettled([googleBookReleases(today, fetchImpl), openLibraryBookReleases(today, fetchImpl)]);
+  if (g.status === 'rejected' && ol.status === 'rejected') throw g.reason;
+  if (g.status === 'rejected') console.error('[home] google books failed:', g.reason instanceof Error ? g.reason.message : String(g.reason));
+  const seen = new Set<string>();
+  return [...(g.status === 'fulfilled' ? g.value : []), ...(ol.status === 'fulfilled' ? ol.value : [])]
+    .filter((i) => (seen.has(i.externalId) ? false : (seen.add(i.externalId), true)))
+    .slice(0, MAX_BOOKS);
 }
 
 async function settle(name: string, p: Promise<ReleaseItem[]>): Promise<ReleaseItem[] | null> {
