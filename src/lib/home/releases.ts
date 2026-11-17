@@ -59,7 +59,7 @@ export function cachedFetch(seconds: number, base: FetchImpl = fetch): FetchImpl
     base(input, { ...init, next: { revalidate: seconds } } as RequestInit)) as FetchImpl;
 }
 
-function tmdbItems(json: unknown, kind: 'movie' | 'series'): ReleaseItem[] {
+export function tmdbItems(json: unknown, kind: 'movie' | 'series'): ReleaseItem[] {
   return arr((json as Json)?.results).flatMap((r): ReleaseItem[] => {
     const poster = str(r?.poster_path);
     const title = str(kind === 'movie' ? r?.title : r?.name);
@@ -180,7 +180,7 @@ export async function bookReleases(today: string, fetchImpl: FetchImpl = fetch):
     .slice(0, MAX_BOOKS);
 }
 
-async function settle(name: string, p: Promise<ReleaseItem[]>): Promise<ReleaseItem[] | null> {
+export async function settle<T = ReleaseItem[]>(name: string, p: Promise<T>): Promise<T | null> {
   try {
     return await p;
   } catch (e) {
