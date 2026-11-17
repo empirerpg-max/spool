@@ -7,12 +7,14 @@ type Props = {
   items: ReleaseItem[] | null;
   /** "Ver mais" address. */
   more?: string;
+  /** Text of the "Ver mais" link, when it should say what it continues ("Ver mais populares"). */
+  moreLabel?: string;
   /** Show the shelf only with at least this many works. */
   minItems?: number;
 };
 
 /** An Explorar shelf. It never shows an error: a shelf that can't be filled simply isn't there. */
-export function Shelf({ title, items, more, minItems = 1 }: Props) {
+export function Shelf({ title, items, more, moreLabel = 'Ver mais', minItems = 1 }: Props) {
   if (!items || items.length < Math.max(minItems, 1)) return null;
-  return <ReleaseRow title={title} items={items} more={more ? { href: more, label: 'Ver mais' } : undefined} />;
+  return <ReleaseRow title={title} items={items} more={more ? { href: more, label: moreLabel } : undefined} />;
 }

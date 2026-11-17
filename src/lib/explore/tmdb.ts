@@ -8,7 +8,14 @@ import { MAX_PAGE, type ExploreFilter } from './options';
  * Nothing is written to the database.
  */
 type Screen = 'movie' | 'series';
-export type Page = { items: ReleaseItem[]; hasMore: boolean };
+/** A "ver mais" list: pages 1 to N. `newFrom` = index of the first item of page N (what earlier pages really showed). */
+export type Page = { items: ReleaseItem[]; hasMore: boolean; newFrom: number };
+
+/** Which cover "Carregar mais" scrolls to: the first new one (or the last, if the new page brought nothing). */
+export function moreAnchor(page: number, result: Page): number | undefined {
+  if (page <= 1 || result.items.length === 0) return undefined;
+  return Math.min(result.newFrom, result.items.length - 1);
+}
 
 /** Enough votes that a handful of 10s can't put an unknown title on top. */
 const MIN_VOTES_RATED = 300;
@@ -69,12 +76,14 @@ export async function tmdbDiscover(
   const items: ReleaseItem[] = [];
   let complete = true;
   let total = 0;
-  for (const a of answers) {
+  let newFrom = 0;
+  for (const [n, a] of answers.entries()) {
     if (a.status === 'rejected') { complete = false; break; }
+    if (n === answers.length - 1) newFrom = items.length;
     total = totalPages(a.value);
     for (const i of tmdbItems(a.value, kind)) {
       if (!seen.has(i.externalId)) { seen.add(i.externalId); items.push(i); }
     }
   }
-  return { items, hasMore: complete && filter.page < Math.min(total, MAX_PAGE) };
+  return { items, hasMore: complete && filter.page < Math.min(total, MAX_PAGE), newFrom: complete ? newFrom : items.length };
 }

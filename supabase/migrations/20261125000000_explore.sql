@@ -20,7 +20,8 @@ create function search_people(p_query text, p_limit int default 20)
 returns table (id uuid, username text, display_name text, avatar_url text, i_follow boolean)
 language sql stable security definer set search_path = public as $$
   with me as (select auth.uid() as uid),
-  q as (select lower(lobby_unaccent(ltrim(btrim(coalesce(p_query, '')), '@'))) as t),
+  -- Só os primeiros 100 caracteres: uma busca enorme não vira trabalho enorme.
+  q as (select lower(lobby_unaccent(ltrim(btrim(left(coalesce(p_query, ''), 100)), '@'))) as t),
   pat as (select t, replace(replace(replace(t, '\', '\\'), '%', '\%'), '_', '\_') as esc from q),
   found as (
     select p.id, p.username, p.display_name, d.avatar_url,
@@ -44,7 +45,11 @@ grant execute on function search_people(text, int) to authenticated;
 
 -- "Populares no Lobby": obras que mais membros diferentes adicionaram às listas nos últimos 30 dias.
 -- Conta listas privadas só como total; a obra só aparece com pelo menos 3 membros (ninguém descobre a
--- lista de uma pessoa) e uma importação grande de uma só pessoa vale 1. Nunca devolve quem adicionou.
+-- lista de uma pessoa). O que veio de uma importação (Letterboxd/Goodreads) não conta: trazer o
+-- histórico não é "adicionar agora". Nunca devolve quem adicionou.
+create index if not exists list_items_created_at on list_items (created_at);
+create index if not exists import_items_imported_work on import_items (work_id) where state = 'importado';
+
 create function lobby_popular(p_kind text, p_limit int default 20)
 returns table (work_id uuid, kind text, external_id text, title text, poster_url text, members int)
 language sql stable security definer set search_path = public as $$
@@ -56,6 +61,9 @@ language sql stable security definer set search_path = public as $$
     and p_kind in ('movie', 'series', 'book') and w.kind::text = p_kind
     and li.created_at > now() - interval '30 days'
     and p.banned_at is null
+    and not exists (
+      select 1 from import_items ii join imports i on i.id = ii.import_id
+      where ii.state = 'importado' and ii.work_id = li.work_id and i.user_id = li.user_id)
   group by w.id
   having count(distinct li.user_id) >= 3
   order by count(distinct li.user_id) desc, max(li.created_at) desc, w.id

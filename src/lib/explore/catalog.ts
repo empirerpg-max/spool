@@ -32,14 +32,17 @@ export async function peopleToFollow(limit = PEOPLE_SIZE): Promise<PersonWithFol
   }));
 }
 
-/** Every shelf of one kind; each one fails on its own. Member-only shelves are null for visitors. */
-export async function loadCatalog(kind: ExploreKind, member: boolean): Promise<CatalogData> {
+/**
+ * Every shelf of one kind, each one still loading: the page shows at once and each shelf streams in when its
+ * source answers (Open Library can take 10 s). Each fails on its own. Member-only shelves are null for visitors.
+ */
+export function loadCatalog(kind: ExploreKind, member: boolean): CatalogData {
   const screen = kind === 'book' ? null : kind;
-  const [trending, topRated, lobby, people] = await Promise.all([
-    settle('explore trending', screen ? tmdbTrending(screen) : olTrendingPt()),
-    screen ? settle('explore top rated', tmdbTopRated(screen)) : null,
-    member ? settle('explore lobby popular', lobbyPopular(kind)) : null,
-    member ? settle('explore people', peopleToFollow()) : null,
-  ]);
-  return { kind, trending, topRated, lobby, people };
+  return {
+    kind,
+    trending: settle('explore trending', screen ? tmdbTrending(screen) : olTrendingPt()),
+    topRated: screen ? settle('explore top rated', tmdbTopRated(screen)) : null,
+    lobby: member ? settle('explore lobby popular', lobbyPopular(kind)) : null,
+    people: member ? settle('explore people', peopleToFollow()) : null,
+  };
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { exploreHref, kindFromTipo, parseFilter, parseKind, PROVIDERS, SUBJECTS, tipoFromKind } from '@/lib/explore/options';
+import { exploreHref, kindFromTipo, parseFilter, parseKind, PROVIDERS, sortsFor, SUBJECTS, tipoFromKind } from '@/lib/explore/options';
 
 describe('parseKind', () => {
   it('reads ?tipo= and starts on films', () => {
@@ -54,6 +54,14 @@ describe('parseFilter (Review Focus 5)', () => {
   it('keeps only what each kind has', () => {
     expect(parseFilter({ assunto: 'horror', genero: '27', provedor: '8' }, 'book')).toEqual({ subject: 'horror', sort: 'populares', page: 1 });
     expect(parseFilter({ assunto: 'horror' }, 'movie')).toEqual({ sort: 'populares', page: 1 });
+  });
+
+  it('books have no "Mais recentes" order', () => {
+    expect(parseFilter({ ordem: 'recentes' }, 'book').sort).toBe('populares');
+    expect(parseFilter({ ordem: 'avaliados' }, 'book').sort).toBe('avaliados');
+    expect(parseFilter({ ordem: 'recentes' }, 'movie').sort).toBe('recentes');
+    expect(sortsFor('book').map((s) => s.label)).toEqual(['Populares', 'Mais bem avaliados']);
+    expect(sortsFor('series').map((s) => s.label)).toEqual(['Populares', 'Mais bem avaliados', 'Mais recentes']);
   });
 
   it('unknown sort falls back to popular; page is kept between 1 and 20', () => {

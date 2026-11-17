@@ -1,4 +1,4 @@
-import { exploreHref, GENRES, PROVIDERS, SORTS, SUBJECTS, type ExploreFilter, type ExploreKind } from '@/lib/explore/options';
+import { exploreHref, GENRES, PROVIDERS, sortsFor, SUBJECTS, type ExploreFilter, type ExploreKind } from '@/lib/explore/options';
 import { ChipRow } from './ChipRow';
 
 /**
@@ -27,7 +27,7 @@ export function ExploreFilters({ kind, filter }: { kind: ExploreKind; filter: Ex
           })} />
         </>
       )}
-      <ChipRow small title="Ordem" chips={SORTS.map((s) => ({ label: s.label, active: filter.sort === s.value, href: href({ sort: s.value }) }))} />
+      <ChipRow small title="Ordem" chips={sortsFor(kind).map((s) => ({ label: s.label, active: filter.sort === s.value, href: href({ sort: s.value }) }))} />
     </div>
   );
 }

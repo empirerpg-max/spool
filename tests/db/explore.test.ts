@@ -95,6 +95,11 @@ describe.skipIf(!hasDb)('search_people', () => {
   it('is for members only', async () => {
     await expectDbError(asAnon("select * from search_people('joao')"), /permission denied/);
   });
+
+  it('only looks at the first 100 characters of the search', async () => {
+    // Whatever comes after the 100th character is ignored (here: spaces, then a lot of text).
+    expect(await usernames(`mari${' '.repeat(96)}${'x'.repeat(5000)}`)).toEqual(['mariazinha']);
+  });
 });
 
 describe.skipIf(!hasDb)('lobby_popular', () => {
@@ -161,5 +166,25 @@ describe.skipIf(!hasDb)('lobby_popular', () => {
 
   it('is for members only', async () => {
     await expectDbError(asAnon("select * from lobby_popular('movie')"), /permission denied/);
+  });
+
+  it('does not count works that came in through an import (Letterboxd/Goodreads)', async () => {
+    const w = await work('1', 'Importada');
+    for (const p of people.slice(0, 3)) await add(p, w);
+    expect((await popular('movie')).map((r) => r.members)).toEqual([3]);
+    // people[0]'s copy came from an import file.
+    const [imp] = await asUser<Id>(people[0], "insert into imports(source) values ('letterboxd') returning id");
+    const [it0] = await asUser<Id>(people[0], "insert into import_items(import_id, position, row) values ($1, 0, '{}') returning id", [imp.id]);
+    await asUser(people[0], "update import_items set state = 'importado', work_id = $2 where id = $1", [it0.id, w]);
+    expect(await popular('movie')).toEqual([]);
+    // A row that was not found in the catalog, or another person's import, changes nothing for the others.
+    await add(people[3], w);
+    expect((await popular('movie')).map((r) => r.members)).toEqual([3]);
+  });
+
+  it('can use an index on when the work was added', async () => {
+    const [row] = await asSuperuser<{ n: number }>(
+      "select count(*)::int as n from pg_indexes where tablename = 'list_items' and indexname = 'list_items_created_at'");
+    expect(row.n).toBe(1);
   });
 });

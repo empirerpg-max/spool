@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Suspense, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { Avatar } from '@/components/social/Avatar';
 import { CreateSheet } from './CreateSheet';
 import { BellIcon, ExploreIcon, HomeIcon, PlusIcon, SignInIcon, UserIcon } from './icons';
@@ -25,6 +25,21 @@ const ITEM =
 const tone = (active: boolean) => (active ? 'text-fg md:bg-surface-2' : 'text-muted hover:text-fg');
 
 const isActive = (path: string, href: string) => (href === '/' ? path === '/' : path === href || path.startsWith(`${href}/`));
+/** Início is the home and, for members, their Timeline. */
+const isHome = (path: string) => path === '/' || isActive(path, '/timeline');
+
+/** Same width as Tailwind's `md:` (48rem): from here on the bar is the computer layout. */
+const DESKTOP_QUERY = '(min-width: 48rem)';
+function subscribeDesktop(onChange: () => void) {
+  const mq = typeof window.matchMedia === 'function' ? window.matchMedia(DESKTOP_QUERY) : null;
+  mq?.addEventListener('change', onChange);
+  return () => mq?.removeEventListener('change', onChange);
+}
+const desktopNow = () => (typeof window.matchMedia === 'function' ? window.matchMedia(DESKTOP_QUERY).matches : false);
+/** Computer layout? On the server (and the first paint) we assume a phone. */
+function useDesktop(): boolean {
+  return useSyncExternalStore(subscribeDesktop, desktopNow, () => false);
+}
 
 function unreadLabel(n: number) {
   if (n <= 0) return 'Avisos';
@@ -64,11 +79,13 @@ function SignInWithQuery({ path }: { path: string }) {
 
 function CreateItem({ canPublish }: { canPublish: boolean }) {
   const [open, setOpen] = useState(false);
+  const desktop = useDesktop();
+  const panelId = useId();
   const wrap = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
-  const close = useCallback(() => {
+  const close = useCallback(({ returnFocus = true }: { returnFocus?: boolean } = {}) => {
     setOpen(false);
-    button.current?.focus();
+    if (returnFocus) button.current?.focus();
   }, []);
 
   useEffect(() => {
@@ -80,12 +97,13 @@ function CreateItem({ canPublish }: { canPublish: boolean }) {
 
   return (
     <div ref={wrap} className="relative h-full">
-      <button ref={button} type="button" aria-label="Criar" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen((v) => !v)}
+      <button ref={button} type="button" aria-label="Criar" aria-haspopup={desktop ? undefined : 'dialog'} aria-expanded={open}
+        aria-controls={open ? panelId : undefined} onClick={() => setOpen((v) => !v)}
         className={`${ITEM} text-muted hover:text-fg md:min-h-10 md:rounded-full md:border md:border-line-strong md:pl-3 md:pr-4 md:font-semibold md:text-fg md:hover:bg-surface-2 aria-expanded:text-fg md:aria-expanded:bg-surface-2`}>
         <PlusIcon className="size-6 md:size-5" active={open} />
         <Label>Criar</Label>
       </button>
-      {open && <CreateSheet canPublish={canPublish} onClose={close} />}
+      {open && <CreateSheet id={panelId} modal={!desktop} canPublish={canPublish} onClose={close} />}
     </div>
   );
 }
@@ -93,7 +111,7 @@ function CreateItem({ canPublish }: { canPublish: boolean }) {
 /** Main navigation. Members: Início, Explorar, Criar, Avisos, Perfil. Visitors: Início, Explorar, Entrar. */
 export function NavBar({ user, unread }: { user: NavUser | null; unread: number }) {
   const path = usePathname() ?? '/';
-  const home = isActive(path, '/');
+  const home = isHome(path);
   const explore = isActive(path, '/explorar');
 
   if (!user) {
@@ -113,7 +131,7 @@ export function NavBar({ user, unread }: { user: NavUser | null; unread: number 
   const profileHref = user.username ? `/@${user.username}` : '/bem-vindo';
   const profile = user.username
     ? [`/@${user.username}`, `/perfil/${user.username}`, '/minha-lista', '/minha-conta'].some((h) => isActive(path, h))
-    : isActive(path, '/bem-vindo');
+    : ['/bem-vindo', '/minha-conta'].some((h) => isActive(path, h));
   const alerts = isActive(path, '/avisos');
   const canPublish = Boolean(user.username) && !user.banned;
 

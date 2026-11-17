@@ -64,7 +64,7 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
   }
 
   const kind = parseKind(tipo);
-  const data = await loadCatalog(kind, user !== null);
+  const data = loadCatalog(kind, user !== null);
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <h1 className="sr-only">Explorar</h1>

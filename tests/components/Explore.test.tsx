@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('@/lib/social/actions', () => ({ follow: vi.fn(async () => ({})), unfollow: vi.fn(async () => ({})) }));
@@ -108,7 +108,8 @@ const films: CatalogData = {
 describe('ExploreCatalog', () => {
   it('films: shelves, streaming and genre chips', () => {
     render(<ExploreCatalog data={films} />);
-    expect(screen.getByRole('region', { name: 'Em alta esta semana' })).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Em alta esta semana' })).getByRole('link', { name: 'Ver mais populares' }))
+      .toHaveAttribute('href', '/explorar/filmes');
     expect(within(screen.getByRole('region', { name: 'Mais bem avaliados' })).getByRole('link', { name: 'Ver mais' }))
       .toHaveAttribute('href', '/explorar/filmes?ordem=avaliados');
     expect(within(screen.getByRole('region', { name: 'No seu streaming' })).getByRole('link', { name: 'Netflix' }))
@@ -146,12 +147,35 @@ describe('ExploreCatalog', () => {
 
   it('books: trending, subjects and Lobby, no streaming or top rated', () => {
     render(<ExploreCatalog data={{ kind: 'book', trending: [item(1, 'book')], topRated: null, lobby: null, people: null }} />);
-    expect(within(screen.getByRole('region', { name: 'Em alta' })).getByRole('link', { name: 'Ver mais' }))
+    // "Ver mais populares" continues the same recent Portuguese fiction (see olSubject without a subject).
+    expect(within(screen.getByRole('region', { name: 'Em alta' })).getByRole('link', { name: 'Ver mais populares' }))
       .toHaveAttribute('href', '/explorar/livros');
     expect(within(screen.getByRole('region', { name: 'Por assunto' })).getByRole('link', { name: 'Terror' }))
       .toHaveAttribute('href', '/explorar/livros?assunto=horror');
     expect(screen.queryByRole('region', { name: 'No seu streaming' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Por gênero' })).not.toBeInTheDocument();
+  });
+});
+
+describe('ExploreCatalog streaming', () => {
+  it('shows the page at once and fills each shelf when its source answers', async () => {
+    let finish!: (v: ReleaseItem[] | null) => void;
+    const slow = new Promise<ReleaseItem[] | null>((r) => { finish = r; });
+    await act(async () => { render(<ExploreCatalog data={{ ...films, trending: slow, topRated: Promise.resolve([item(4)]) }} />); });
+    // Chips and the other shelves don't wait for the slow one.
+    expect(screen.getByRole('region', { name: 'Por gênero' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Mais bem avaliados' })).toBeInTheDocument();
+    expect(screen.getByText('Carregando Em alta esta semana…')).toBeInTheDocument();
+    await act(async () => { finish(three); });
+    expect(await screen.findByRole('region', { name: 'Em alta esta semana' })).toBeInTheDocument();
+    expect(screen.queryByText('Carregando Em alta esta semana…')).not.toBeInTheDocument();
+  });
+
+  it('a slow source that fails just leaves its shelf out', async () => {
+    await act(async () => { render(<ExploreCatalog data={{ ...films, trending: Promise.resolve(null) }} />); });
+    expect(screen.getByRole('region', { name: 'Mais bem avaliados' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Em alta esta semana' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Carregando/)).not.toBeInTheDocument();
   });
 });
 
@@ -168,8 +192,10 @@ describe('ExploreFilters ("ver mais")', () => {
     expect(within(order).getByRole('link', { name: 'Mais bem avaliados' })).toHaveAttribute('aria-current', 'true');
   });
 
-  it('books filter by subject', () => {
+  it('books filter by subject and have no "Mais recentes"', () => {
     render(<ExploreFilters kind="book" filter={{ subject: 'horror', sort: 'populares', page: 1 }} />);
+    const order = screen.getByRole('region', { name: 'Ordem' });
+    expect(within(order).getAllByRole('link').map((l) => l.textContent)).toEqual(['Populares', 'Mais bem avaliados']);
     expect(screen.queryByRole('region', { name: 'Streaming' })).not.toBeInTheDocument();
     expect(within(screen.getByRole('region', { name: 'Assunto' })).getByRole('link', { name: 'Romance' }))
       .toHaveAttribute('href', '/explorar/livros?assunto=romance');

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const nav = vi.hoisted(() => ({ pathname: '/', search: '' }));
 vi.mock('next/navigation', () => ({
@@ -19,6 +19,14 @@ beforeEach(() => {
   nav.search = '';
 });
 
+/** Pretend the screen is a computer's (wide) instead of a phone's. */
+function desktop() {
+  vi.stubGlobal('matchMedia', (q: string) => ({
+    matches: q.includes('min-width'), media: q, addEventListener: () => {}, removeEventListener: () => {},
+  }));
+}
+afterEach(() => { vi.unstubAllGlobals(); });
+
 describe('NavBar — member', () => {
   it('shows the five items with exact labels and destinations', () => {
     render(<NavBar user={member()} unread={0} />);
@@ -26,7 +34,6 @@ describe('NavBar — member', () => {
     expect(items.map((li) => li.querySelector('[data-label]')?.textContent)).toEqual(['Início', 'Explorar', 'Criar', 'Avisos', 'Perfil']);
     expect(within(bar()).getByRole('link', { name: 'Início' })).toHaveAttribute('href', '/');
     expect(within(bar()).getByRole('link', { name: 'Explorar' })).toHaveAttribute('href', '/explorar');
-    expect(within(bar()).getByRole('button', { name: 'Criar' })).toHaveAttribute('aria-haspopup', 'dialog');
     expect(within(bar()).getByRole('link', { name: 'Avisos' })).toHaveAttribute('href', '/avisos');
     expect(within(bar()).getByRole('link', { name: 'Perfil' })).toHaveAttribute('href', '/@ana');
   });
@@ -69,15 +76,67 @@ describe('NavBar — member', () => {
     expect(within(bar()).getByRole('link', { name: 'Perfil' })).not.toHaveAttribute('aria-current');
   });
 
-  it('Criar opens a sheet with the two options and closes on Escape', () => {
+  it('the Timeline counts as Início', () => {
+    nav.pathname = '/timeline';
+    render(<NavBar user={member()} unread={0} />);
+    expect(within(bar()).getByRole('link', { name: 'Início' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('Criar opens a sheet with the two options and closes on Escape, back on the button', () => {
     render(<NavBar user={member()} unread={0} />);
     expect(screen.queryByRole('dialog')).toBeNull();
-    fireEvent.click(within(bar()).getByRole('button', { name: 'Criar' }));
+    const button = within(bar()).getByRole('button', { name: 'Criar' });
+    fireEvent.click(button);
     const sheet = screen.getByRole('dialog', { name: 'Criar' });
     expect(within(sheet).getByRole('link', { name: 'Publicar sobre uma obra' })).toHaveAttribute('href', '/publicar');
     expect(within(sheet).getByRole('link', { name: 'Adicionar à minha lista' })).toHaveAttribute('href', '/explorar?foco=busca');
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('dialog')).toBeNull();
+    expect(button).toHaveFocus();
+  });
+
+  it('on phones the sheet is modal: Tab stays inside and it has a close button', () => {
+    render(<NavBar user={member()} unread={0} />);
+    const button = within(bar()).getByRole('button', { name: 'Criar' });
+    expect(button).toHaveAttribute('aria-haspopup', 'dialog');
+    fireEvent.click(button);
+    const sheet = screen.getByRole('dialog', { name: 'Criar' });
+    expect(sheet).toHaveAttribute('aria-modal', 'true');
+    const publish = within(sheet).getByRole('link', { name: 'Publicar sobre uma obra' });
+    const close = within(sheet).getByRole('button', { name: 'Fechar' });
+    expect(publish).toHaveFocus();
+    // Shift+Tab from the first option goes to the last one (the close button), Tab from it back to the first.
+    fireEvent.keyDown(publish, { key: 'Tab', shiftKey: true });
+    expect(close).toHaveFocus();
+    fireEvent.keyDown(close, { key: 'Tab' });
+    expect(publish).toHaveFocus();
+    fireEvent.click(close);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(button).toHaveFocus();
+  });
+
+  it('on computers it is a small non-modal panel under the button', () => {
+    desktop();
+    render(<NavBar user={member()} unread={0} />);
+    const button = within(bar()).getByRole('button', { name: 'Criar' });
+    expect(button).not.toHaveAttribute('aria-haspopup');
+    fireEvent.click(button);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    const panel = screen.getByRole('group', { name: 'Criar' });
+    expect(panel).not.toHaveAttribute('aria-modal');
+    expect(button).toHaveAttribute('aria-controls', panel.id);
+    expect(within(panel).getByRole('link', { name: 'Publicar sobre uma obra' })).toHaveFocus();
+    expect(within(panel).queryByRole('button', { name: 'Fechar' })).toBeNull();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('group', { name: 'Criar' })).toBeNull();
+    expect(button).toHaveFocus();
+
+    // Tabbing out of it closes it and leaves the focus where it went.
+    fireEvent.click(button);
+    const avisos = within(bar()).getByRole('link', { name: 'Avisos' });
+    fireEvent.blur(within(screen.getByRole('group', { name: 'Criar' })).getByRole('link', { name: 'Adicionar à minha lista' }), { relatedTarget: avisos });
+    expect(screen.queryByRole('group', { name: 'Criar' })).toBeNull();
+    expect(button).not.toHaveFocus();
   });
 
   it('hides "Publicar sobre uma obra" for banned members and before choosing a username', () => {

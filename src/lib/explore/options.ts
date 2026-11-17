@@ -17,6 +17,11 @@ export const SORTS: Array<{ value: ExploreSort; label: string }> = [
   { value: 'recentes', label: 'Mais recentes' },
 ];
 
+/** Orders a kind offers on "ver mais": books have no "Mais recentes". */
+export function sortsFor(kind: ExploreKind): typeof SORTS {
+  return kind === 'book' ? SORTS.filter((s) => s.value !== 'recentes') : SORTS;
+}
+
 /** Streaming services common in Brazil (TMDB ids, catalog for watch_region=BR). */
 export const PROVIDERS: Array<{ id: number; name: string }> = [
   { id: 8, name: 'Netflix' },
@@ -77,7 +82,7 @@ export const tipoFromKind = (kind: ExploreKind) => TIPOS[kind];
 /** Filters of a "ver mais" page. Anything unknown is left out, so an old or edited address still works. */
 export function parseFilter(params: Params, kind: ExploreKind): ExploreFilter {
   const sortRaw = first(params.ordem);
-  const sort = SORTS.some((s) => s.value === sortRaw) ? (sortRaw as ExploreSort) : 'populares';
+  const sort = sortsFor(kind).some((s) => s.value === sortRaw) ? (sortRaw as ExploreSort) : 'populares';
   const page = Math.min(Math.max(int(params.pagina) ?? 1, 1), MAX_PAGE);
   const out: ExploreFilter = { sort, page };
   if (kind === 'book') {

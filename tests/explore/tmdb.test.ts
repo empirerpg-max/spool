@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { tmdbDiscover, tmdbTopRated, tmdbTrending } from '@/lib/explore/tmdb';
+import { moreAnchor, tmdbDiscover, tmdbTopRated, tmdbTrending } from '@/lib/explore/tmdb';
 import { fakeFetch } from '../catalog/clients.helpers';
 
 beforeEach(() => { process.env.TMDB_API_READ_TOKEN = 'test-token'; });
@@ -84,6 +84,8 @@ describe('tmdbDiscover', () => {
     const r = await tmdbDiscover('movie', { sort: 'populares', page: 3 }, f, '2026-11-17');
     expect(r.items.map((i) => i.externalId)).toEqual(['1', '2', '3', '4']);
     expect(r.hasMore).toBe(false);
+    // Page 3 starts after the 3 different works of pages 1 and 2 (the repeat is not shown twice).
+    expect(r.newFrom).toBe(3);
   });
 
   it('has more while TMDB has more pages (up to 20)', async () => {
@@ -104,5 +106,19 @@ describe('tmdbDiscover', () => {
   it('fails when the first page fails', async () => {
     const f = fakeFetch([{ match: /discover/, status: 500 }]);
     await expect(tmdbDiscover('movie', { sort: 'populares', page: 1 }, f, '2026-11-17')).rejects.toThrow();
+  });
+});
+
+describe('moreAnchor ("Carregar mais" lands on the first new cover)', () => {
+  const items = (n: number) => Array.from({ length: n }, (_, i) => ({
+    kind: 'book' as const, externalId: `OL${i}W`, title: `L${i}`, posterUrl: null, date: null, popularity: 0,
+  }));
+  it('uses how many covers the earlier pages really showed', () => {
+    expect(moreAnchor(2, { items: items(34), hasMore: true, newFrom: 10 })).toBe(10);
+  });
+  it('none on the first page, last cover when the new page brought nothing', () => {
+    expect(moreAnchor(1, { items: items(20), hasMore: true, newFrom: 0 })).toBeUndefined();
+    expect(moreAnchor(2, { items: items(10), hasMore: false, newFrom: 10 })).toBe(9);
+    expect(moreAnchor(2, { items: [], hasMore: false, newFrom: 0 })).toBeUndefined();
   });
 });
