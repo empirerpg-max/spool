@@ -43,6 +43,20 @@ describe('NavBar — member', () => {
     expect(within(bar()).getByRole('link', { name: 'Perfil' })).toHaveAttribute('href', '/bem-vindo');
   });
 
+  it('opening Avisos clears the badge, and it stays cleared after leaving (alerts were marked read)', () => {
+    nav.pathname = '/avisos';
+    const { rerender } = render(<NavBar user={member()} unread={1} />);
+    expect(within(bar()).queryByText('1')).toBeNull();
+    nav.pathname = '/explorar';
+    rerender(<NavBar user={member()} unread={1} />);
+    expect(within(bar()).queryByText('1')).toBeNull();
+    rerender(<NavBar user={member()} unread={3} />);
+    expect(within(bar()).getByText('3')).toBeInTheDocument();
+    rerender(<NavBar user={member()} unread={0} />);
+    rerender(<NavBar user={member()} unread={1} />);
+    expect(within(bar()).getByText('1')).toBeInTheDocument();
+  });
+
   it('shows the unread count on Avisos, capped at 9+', () => {
     const { rerender } = render(<NavBar user={member()} unread={12} />);
     expect(within(bar()).getByRole('link', { name: '12 avisos não lidos' })).toHaveAttribute('href', '/avisos');

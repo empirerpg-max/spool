@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { AlertList } from '@/components/alerts/AlertList';
+import { ClearAlertsButton } from '@/components/alerts/ClearAlertsButton';
 import { EnablePush } from '@/components/alerts/EnablePush';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { listMyActivity, listMyAlerts, markAllRead } from '@/lib/alerts/queries';
@@ -17,7 +18,10 @@ export default async function AlertsPage() {
   await markAllRead();
   return (
     <section className="mx-auto max-w-3xl space-y-6">
-      <h1 className="font-display text-3xl font-extrabold">Avisos</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-3xl font-extrabold">Avisos</h1>
+        {alerts.length > 0 && <ClearAlertsButton />}
+      </div>
       <EnablePush />
       <AlertList alerts={alerts} />
     </section>

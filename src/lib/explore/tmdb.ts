@@ -1,6 +1,6 @@
 import type { FetchImpl } from '@/lib/catalog/http';
 import { fetchTmdbList } from '@/lib/catalog/tmdb-client';
-import { cachedFetch, RELEASES_REVALIDATE_S, tmdbItems, todaySaoPaulo, type ReleaseItem } from '@/lib/home/releases';
+import { addDays, cachedFetch, RELEASES_REVALIDATE_S, tmdbItems, todaySaoPaulo, type ReleaseItem } from '@/lib/home/releases';
 import { MAX_PAGE, type ExploreFilter } from './options';
 
 /**
@@ -17,8 +17,12 @@ export function moreAnchor(page: number, result: Page): number | undefined {
   return Math.min(result.newFrom, result.items.length - 1);
 }
 
-/** Enough votes that a handful of 10s can't put an unknown title on top. */
-const MIN_VOTES_RATED = 300;
+/**
+ * Enough votes that fans can't put a title on top, and only titles out for 6 months:
+ * in the first weeks fan votes inflate the average (a new anime film opening at 9+, IMDb 5.5).
+ */
+const MIN_VOTES_RATED = { movie: 1000, series: 500 } as const;
+const RATED_SETTLE_DAYS = 180;
 const MIN_VOTES_RECENT = 10;
 
 const tv = (kind: Screen) => (kind === 'movie' ? 'movie' : 'tv');
@@ -36,8 +40,10 @@ export async function tmdbTopRated(kind: Screen, fetchImpl: FetchImpl = defaultF
 function discoverParams(kind: Screen, f: ExploreFilter, today: string, page: number): Record<string, string> {
   const p: Record<string, string> = { include_adult: 'false', page: String(page) };
   if (f.sort === 'avaliados') {
+    const date = kind === 'movie' ? 'primary_release_date' : 'first_air_date';
     p.sort_by = 'vote_average.desc';
-    p['vote_count.gte'] = String(MIN_VOTES_RATED);
+    p['vote_count.gte'] = String(MIN_VOTES_RATED[kind]);
+    p[`${date}.lte`] = addDays(today, -RATED_SETTLE_DAYS);
   } else if (f.sort === 'recentes') {
     const date = kind === 'movie' ? 'primary_release_date' : 'first_air_date';
     p.sort_by = `${date}.desc`;

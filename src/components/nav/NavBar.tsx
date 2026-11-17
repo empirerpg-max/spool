@@ -109,8 +109,16 @@ function CreateItem({ canPublish }: { canPublish: boolean }) {
 }
 
 /** Main navigation. Members: Início, Explorar, Criar, Avisos, Perfil. Visitors: Início, Explorar, Entrar. */
-export function NavBar({ user, unread }: { user: NavUser | null; unread: number }) {
+export function NavBar({ user, unread: serverUnread }: { user: NavUser | null; unread: number }) {
   const path = usePathname() ?? '/';
+  // The bar lives in the layout, which is not re-rendered when moving between pages: after /avisos marks
+  // everything read, the count it got from the server is stale. Hide that count until the server sends another.
+  const [clearedAt, setClearedAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (path === '/avisos') setClearedAt(serverUnread);
+    else if (clearedAt !== null && clearedAt !== serverUnread) setClearedAt(null);
+  }, [path, serverUnread, clearedAt]);
+  const unread = clearedAt === serverUnread ? 0 : serverUnread;
   const home = isHome(path);
   const explore = isActive(path, '/explorar');
 
