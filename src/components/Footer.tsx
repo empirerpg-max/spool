@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
-const TMDB_LOGO =
-  'https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb6f8a62a4c6bc55cd9ba82bb2cd95f6c.svg';
+// Served from our own site: TMDB refuses images requested from other sites (403).
+const TMDB_LOGO = '/tmdb-logo.svg';
 
 export function Footer() {
   return (
