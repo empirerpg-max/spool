@@ -94,6 +94,9 @@ export function supabaseRatingsStore(client: SupabaseClient) {
         imdbId: row.imdb_id, imdbRating: num(row.imdb_rating), imdbVotes: row.imdb_votes, rtScore: row.rt_score, checkedOn: row.ratings_checked_on,
       };
     },
+    async saveImdbId(workId: string, imdbId: string): Promise<void> {
+      check(await client.from('works').update({ imdb_id: imdbId }).eq('id', workId).is('imdb_id', null));
+    },
     async write(workId: string, r: OmdbRatings, today: string): Promise<void> {
       check(await client.from('works').update({
         imdb_rating: r.imdbRating, imdb_votes: r.imdbVotes, rt_score: r.rtScore, ratings_checked_on: today,

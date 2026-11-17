@@ -95,3 +95,30 @@ describe('dailyBudget', () => {
     expect(take('2026-11-17')).toBe(true);
   });
 });
+
+describe('refreshRatingsIfDue without a stored IMDb id', () => {
+  it('looks the id up, saves it, then asks OMDb', async () => {
+    const d = deps({
+      read: vi.fn(async () => current({ imdbId: null, checkedOn: null })),
+      lookupImdbId: vi.fn(async () => 'tt0133093'),
+      saveImdbId: vi.fn(async () => {}),
+    });
+    const r = await refreshRatingsIfDue('w1', d);
+    expect(d.lookupImdbId).toHaveBeenCalled();
+    expect(d.saveImdbId).toHaveBeenCalledWith('w1', 'tt0133093');
+    expect(d.fetchRatings).toHaveBeenCalledWith('tt0133093');
+    expect(r?.imdbId).toBe('tt0133093');
+  });
+
+  it('stays quiet when the lookup finds nothing', async () => {
+    const d = deps({
+      read: vi.fn(async () => current({ imdbId: null, checkedOn: null })),
+      lookupImdbId: vi.fn(async () => null),
+      saveImdbId: vi.fn(async () => {}),
+    });
+    await refreshRatingsIfDue('w1', d);
+    expect(d.saveImdbId).not.toHaveBeenCalled();
+    expect(d.fetchRatings).not.toHaveBeenCalled();
+  });
+});
+

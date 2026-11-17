@@ -1,6 +1,7 @@
 import 'server-only';
 import { createServiceClient } from '@/lib/supabase/server';
 import { fetchOmdbRatings } from './omdb';
+import { fetchImdbId } from './tmdb-client';
 import { refreshRatingsIfDue, todaySaoPaulo, type ExternalRatings, type LobbyRating } from './ratings';
 import { supabaseRatingsStore } from './repository';
 import type { WorkKind } from './types';
@@ -11,7 +12,7 @@ const configured = () => Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process
  * Scores for a work page: the Lobby average (members' stars) and, for films and series, IMDb / Rotten Tomatoes.
  * External scores are refreshed from OMDb only when due (at most once every 7 days). Never throws.
  */
-export async function getWorkRatings(workId: string | null, kind: WorkKind): Promise<{ lobby: LobbyRating | null; external: ExternalRatings | null }> {
+export async function getWorkRatings(workId: string | null, kind: WorkKind, externalId?: string): Promise<{ lobby: LobbyRating | null; external: ExternalRatings | null }> {
   if (!workId || !configured()) return { lobby: null, external: null };
   const db = createServiceClient();
 
@@ -29,7 +30,12 @@ export async function getWorkRatings(workId: string | null, kind: WorkKind): Pro
     ? Promise.resolve(null)
     : (async () => {
       const store = supabaseRatingsStore(db);
-      return refreshRatingsIfDue(workId, { today: todaySaoPaulo(), read: store.read, write: store.write, fetchRatings: (id) => fetchOmdbRatings(id) });
+      return refreshRatingsIfDue(workId, {
+        today: todaySaoPaulo(), read: store.read, write: store.write, fetchRatings: (id) => fetchOmdbRatings(id),
+        ...(externalId && process.env.OMDB_API_KEY?.trim()
+          ? { lookupImdbId: () => fetchImdbId(kind, externalId), saveImdbId: store.saveImdbId }
+          : {}),
+      });
     })().catch((e) => {
       console.error('[ratings] external failed', e);
       return null;

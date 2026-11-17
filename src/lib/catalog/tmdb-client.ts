@@ -1,3 +1,4 @@
+import { IMDB_ID } from './omdb';
 import { getJson, type FetchImpl } from './http';
 import { normalizeTmdbMovie, normalizeTmdbSearch, normalizeTmdbTv } from './tmdb-normalize';
 import type { NormalizedWork, SearchHit } from './types';
@@ -47,4 +48,11 @@ export async function searchTmdbMovie(title: string, year: number | null, fetchI
 /** A TMDB list endpoint (e.g. `/movie/now_playing`) in Portuguese, as raw JSON. */
 export async function fetchTmdbList(path: string, params: Record<string, string>, fetchImpl: FetchImpl = fetch): Promise<unknown> {
   return getJson(url(path, { language: 'pt-BR', ...params }), 'tmdb', headers(), fetchImpl);
+}
+
+/** The IMDb id of a film or series, from TMDB's external ids; null when TMDB has none. */
+export async function fetchImdbId(kind: 'movie' | 'series', id: string, fetchImpl: FetchImpl = fetch): Promise<string | null> {
+  const path = kind === 'movie' ? `/movie/${id}/external_ids` : `/tv/${id}/external_ids`;
+  const json = (await getJson(url(path, {}), 'tmdb', headers(), fetchImpl)) as { imdb_id?: unknown };
+  return typeof json?.imdb_id === 'string' && IMDB_ID.test(json.imdb_id) ? json.imdb_id : null;
 }

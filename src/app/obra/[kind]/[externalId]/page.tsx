@@ -78,7 +78,7 @@ export default async function WorkPage({ params, searchParams }: { params: Param
   const { work, stale } = result;
   const [topics, topicCount, user] = await Promise.all([community(result.id, page), topicTotal(result.id), getCurrentUser()]);
   const [item, posts, ratings] = await Promise.all([
-    listItem(result.id, Boolean(user)), workPosts(result.id, Boolean(user), postsPage), getWorkRatings(result.id, work.kind),
+    listItem(result.id, Boolean(user)), workPosts(result.id, Boolean(user), postsPage), getWorkRatings(result.id, work.kind, externalId),
   ]);
   const cinema = work.kind === 'movie' ? cinemaStatus(work, todaySaoPaulo()) : null;
   const sectionTitle = 'font-display text-2xl font-bold';

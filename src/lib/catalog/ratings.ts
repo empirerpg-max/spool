@@ -27,11 +27,21 @@ export type RefreshDeps = {
   write: (workId: string, ratings: OmdbRatings, today: string) => Promise<void>;
   /** Takes one OMDb call from the budget; false when it is spent. */
   budget?: () => boolean;
+  /** Works saved before IMDb ids were kept have none: find it (TMDB external ids) and store it. */
+  lookupImdbId?: () => Promise<string | null>;
+  saveImdbId?: (workId: string, imdbId: string) => Promise<void>;
 };
 
 /** Returns the work's external scores, asking OMDb first when they are due. */
 export async function refreshRatingsIfDue(workId: string, d: RefreshDeps): Promise<ExternalRatings | null> {
-  const current = await d.read(workId);
+  let current = await d.read(workId);
+  if (current && !current.imdbId && d.lookupImdbId) {
+    const found = await d.lookupImdbId().catch(() => null);
+    if (found) {
+      await d.saveImdbId?.(workId, found).catch((e) => console.error('[ratings] imdb id save failed', e));
+      current = { ...current, imdbId: found };
+    }
+  }
   if (!current || !current.imdbId || !ratingsDue(current.imdbId, current.checkedOn, d.today)) return current;
   if (d.budget && !d.budget()) return current;
   const fresh = await d.fetchRatings(current.imdbId);
