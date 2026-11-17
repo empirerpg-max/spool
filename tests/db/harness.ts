@@ -30,6 +30,8 @@ create table auth.users (id uuid primary key default gen_random_uuid(), email te
 create table auth.sessions (id uuid primary key default gen_random_uuid(), user_id uuid references auth.users on delete cascade);
 create table auth.refresh_tokens (id bigserial primary key, user_id text, session_id uuid);
 do $$ begin create role service_role nologin bypassrls; exception when duplicate_object then null; end $$;
+create schema if not exists extensions;
+grant usage on schema extensions to anon, authenticated, service_role;
 grant usage on schema public to service_role;
 create function auth.uid() returns uuid language sql stable as
   $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
