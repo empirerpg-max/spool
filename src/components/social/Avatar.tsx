@@ -1,6 +1,6 @@
-type Size = 'sm' | 'md' | 'lg';
+type Size = 'xs' | 'sm' | 'md' | 'lg';
 
-const SIZES: Record<Size, string> = { sm: 'size-8 text-sm', md: 'size-12 text-lg', lg: 'size-24 text-4xl' };
+const SIZES: Record<Size, string> = { xs: 'size-6 text-[0.65rem]', sm: 'size-8 text-sm', md: 'size-12 text-lg', lg: 'size-24 text-4xl' };
 
 const initial = (name: string) => name.match(/\p{L}|\p{N}/u)?.[0]?.toUpperCase() ?? '?';
 

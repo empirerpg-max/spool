@@ -1,26 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
-import { BellView } from '@/components/alerts/BellView';
 import { AlertList } from '@/components/alerts/AlertList';
 
-describe('BellView', () => {
-  it('links to the alerts with an accessible count', () => {
-    render(<BellView count={3} />);
-    const link = screen.getByRole('link', { name: '3 avisos não lidos' });
-    expect(link).toHaveAttribute('href', '/avisos');
-    expect(screen.getByText('3')).toBeInTheDocument();
-  });
-  it('caps the badge and reads singular/none', () => {
-    const { rerender } = render(<BellView count={12} />);
-    expect(screen.getByText('9+')).toBeInTheDocument();
-    rerender(<BellView count={1} />);
-    expect(screen.getByRole('link', { name: '1 aviso não lido' })).toBeInTheDocument();
-    rerender(<BellView count={0} />);
-    expect(screen.getByRole('link', { name: 'Avisos' })).toBeInTheDocument();
-    expect(screen.queryByText('0')).toBeNull();
-  });
-});
-
+// The unread badge now lives on the Avisos item of the navigation (tests/components/NavBar.test.tsx).
 describe('AlertList', () => {
   it('lists alerts with links and highlights unread ones', () => {
     render(<AlertList alerts={[

@@ -41,6 +41,12 @@ h1, h2, h3 {
   outline-offset: 2px;
 }
 
+/* The "Criar" sheet rises from the bottom bar on phones. */
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; transition: none !important; }
 }

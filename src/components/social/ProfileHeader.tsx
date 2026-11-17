@@ -3,13 +3,14 @@ import type { ProfileView } from '@/lib/social/queries';
 import { Avatar } from './Avatar';
 import { FollowButton } from './FollowButton';
 import { ProfileMenu } from './ProfileMenu';
+import { SettingsMenu } from './SettingsMenu';
 import { UnblockButton } from './UnblockButton';
 
 const n = (v: number) => v.toLocaleString('pt-BR');
 const plural = (v: number, one: string, many: string) => `${n(v)} ${v === 1 ? one : many}`;
 
 /** Top of a profile page: photo, name, @, bio, counts and the buttons that fit who is looking. */
-export function ProfileHeader({ profile: p }: { profile: ProfileView }) {
+export function ProfileHeader({ profile: p, isAdmin = false }: { profile: ProfileView; isAdmin?: boolean }) {
   const path = `/perfil/${p.username}`;
   const name = p.displayName ?? `@${p.username}`;
 
@@ -37,7 +38,10 @@ export function ProfileHeader({ profile: p }: { profile: ProfileView }) {
         </div>
         <div className="flex items-start gap-2">
           {p.isMe ? (
-            <Link href="/minha-conta#perfil" className="rounded-full border border-line-strong px-5 py-2 font-semibold hover:bg-surface-2">Editar perfil</Link>
+            <>
+              <Link href="/minha-conta#perfil" className="flex min-h-11 items-center rounded-full border border-line-strong px-5 font-semibold hover:bg-surface-2">Editar perfil</Link>
+              <SettingsMenu isAdmin={isAdmin} />
+            </>
           ) : (
             <>
               <FollowButton targetId={p.id} path={path} initialFollowing={p.isFollowing} />

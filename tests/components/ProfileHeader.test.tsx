@@ -45,6 +45,31 @@ describe('ProfileHeader', () => {
     expect(screen.queryByText('Mais opções')).toBeNull();
   });
 
+  it('own profile: gear "Configurações" opens Minha conta and Sair (no Admin for members)', () => {
+    render(<ProfileHeader profile={profile({ isMe: true })} />);
+    const gear = screen.getByRole('button', { name: 'Configurações' });
+    expect(gear).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(gear);
+    const items = screen.getAllByRole('menuitem').map((i) => i.textContent);
+    expect(items).toEqual(['Minha conta', 'Sair']);
+    expect(screen.getByRole('menuitem', { name: 'Minha conta' })).toHaveAttribute('href', '/minha-conta');
+    const sair = screen.getByRole('menuitem', { name: 'Sair' });
+    expect(sair).toHaveAttribute('type', 'submit');
+    expect(sair.closest('form')).toHaveAttribute('action', '/sair');
+  });
+
+  it('own profile of an admin: gear menu includes Admin', () => {
+    render(<ProfileHeader profile={profile({ isMe: true })} isAdmin />);
+    fireEvent.click(screen.getByRole('button', { name: 'Configurações' }));
+    expect(screen.getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Minha conta', 'Admin', 'Sair']);
+    expect(screen.getByRole('menuitem', { name: 'Admin' })).toHaveAttribute('href', '/admin');
+  });
+
+  it('someone else: no gear menu', () => {
+    render(<ProfileHeader profile={profile()} isAdmin />);
+    expect(screen.queryByRole('button', { name: 'Configurações' })).toBeNull();
+  });
+
   it('someone else: Seguir button calls follow', async () => {
     render(<ProfileHeader profile={profile()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Seguir' }));

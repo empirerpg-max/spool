@@ -1,7 +1,7 @@
 /** Sticky in-page navigation; plain anchors, so it works without JavaScript. */
 export function SectionNav({ items }: { items: Array<{ id: string; label: string }> }) {
   return (
-    <nav aria-label="Seções" className="sticky top-14 z-20 -mx-4 border-b border-line bg-bg/95 px-4 backdrop-blur">
+    <nav aria-label="Seções" className="sticky top-12 z-20 md:top-14 -mx-4 border-b border-line bg-bg/95 px-4 backdrop-blur">
       <ul className="flex gap-6 overflow-x-auto text-sm font-semibold">
         {items.map((i) => (
           <li key={i.id}>
