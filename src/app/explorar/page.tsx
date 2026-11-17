@@ -2,11 +2,15 @@ import type { Metadata } from 'next';
 import { ExploreCatalog } from '@/components/explore/ExploreCatalog';
 import { ExploreSearch } from '@/components/explore/ExploreSearch';
 import { KindTabs } from '@/components/explore/KindTabs';
+import { PeopleResults } from '@/components/explore/PeopleResults';
+import { ResultTabs } from '@/components/explore/ResultTabs';
 import { WorkResults } from '@/components/explore/WorkResults';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { searchCatalog } from '@/lib/catalog/search';
-import { loadCatalog } from '@/lib/explore/catalog';
+import { loadCatalog, peopleToFollow } from '@/lib/explore/catalog';
 import { kindFromTipo, parseKind, tipoFromKind, type ExploreKind } from '@/lib/explore/options';
+import { searchPeople } from '@/lib/social/people-search';
+import type { PersonWithFollow } from '@/lib/social/queries';
 
 export const metadata: Metadata = { title: 'Explorar · Lobby' };
 
@@ -25,14 +29,34 @@ export default async function ExplorePage({ searchParams }: { searchParams: Prom
   const tipo = first(params.tipo);
   const user = await getCurrentUser();
 
+  if (first(params.aba) === 'pessoas') {
+    // People: members only. Empty search shows people to follow; a failure shows an empty list, not an error page.
+    const quiet = (what: string) => (e: unknown): PersonWithFollow[] => { console.error(`[explore] ${what} failed`, e); return []; };
+    const [people, suggestions] = user
+      ? await Promise.all([
+        q ? searchPeople(q).catch(quiet('people search')) : [],
+        q ? [] : peopleToFollow(8).catch(quiet('people to follow')),
+      ])
+      : [[], []];
+    return (
+      <div className="mx-auto max-w-4xl space-y-6">
+        <h1 className="sr-only">Explorar</h1>
+        <ExploreSearch q={q} tab="pessoas" />
+        <ResultTabs q={q} tab="pessoas" tipo={tipo || undefined} />
+        <PeopleResults q={q} member={user !== null} people={people} suggestions={suggestions} />
+      </div>
+    );
+  }
+
   if (q) {
-    // Search: the kind tabs filter the works; without ?tipo= every kind is shown.
+    // Works: the kind tabs filter the results; without ?tipo= every kind is shown.
     const kind: ExploreKind | null = kindFromTipo(tipo);
     const { hits, unavailable } = await searchCatalog(q);
     return (
       <div className="mx-auto max-w-4xl space-y-6">
         <h1 className="sr-only">Explorar</h1>
         <ExploreSearch q={q} tipo={kind ? tipoFromKind(kind) : undefined} />
+        <ResultTabs q={q} tab="obras" tipo={kind ? tipoFromKind(kind) : undefined} />
         <KindTabs withAll active={kind} hrefFor={(k) => href({ q, tipo: k ? tipoFromKind(k) : undefined })} />
         <WorkResults q={q} kind={kind} hits={hits} unavailable={unavailable} />
       </div>

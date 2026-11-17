@@ -86,6 +86,11 @@ describe('ExploreSearch', () => {
     expect(box).not.toHaveFocus();
   });
 
+  it('searching from the Pessoas tab stays there', () => {
+    const { container } = render(<ExploreSearch q="ana" tab="pessoas" />);
+    expect(container.querySelector('input[name="aba"]')).toHaveValue('pessoas');
+  });
+
   it('is focused when coming from "Adicionar à minha lista"', () => {
     render(<ExploreSearch q="" autoFocus />);
     expect(screen.getByRole('searchbox', { name: 'Buscar' })).toHaveFocus();

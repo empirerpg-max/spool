@@ -2,15 +2,18 @@ type Props = {
   q: string;
   /** Keep the chosen kind (`?tipo=`) when searching. */
   tipo?: string;
+  /** Stay on the "Pessoas" results. */
+  tab?: 'pessoas';
   /** Focus the field right away ("Adicionar à minha lista"). */
   autoFocus?: boolean;
 };
 
 /** The single search field of Explorar: works and people. */
-export function ExploreSearch({ q, tipo, autoFocus = false }: Props) {
+export function ExploreSearch({ q, tipo, tab, autoFocus = false }: Props) {
   return (
     <form action="/explorar" method="get" role="search" className="flex w-full gap-2">
       {tipo && <input type="hidden" name="tipo" value={tipo} />}
+      {tab && <input type="hidden" name="aba" value={tab} />}
       <input
         type="search"
         name="q"
