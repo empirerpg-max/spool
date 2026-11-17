@@ -47,7 +47,7 @@ const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0
 const isoDay = (v: unknown) => { const s = str(v); return s && /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : null; };
 const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 
-function addDays(isoDate: string, days: number): string {
+export function addDays(isoDate: string, days: number): string {
   const d = new Date(`${isoDate}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);

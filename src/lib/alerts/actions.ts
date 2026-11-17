@@ -17,3 +17,11 @@ export async function removePushSubscription(endpoint: string): Promise<void> {
   const supabase = await createSessionClient();
   await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
 }
+
+/** "Limpar avisos": deletes all of the signed-in member's list and social alerts. */
+export async function clearAllAlerts(): Promise<{ ok: boolean }> {
+  const supabase = await createSessionClient();
+  const { error } = await supabase.rpc('clear_my_alerts');
+  if (error) console.error('[alerts] clear failed', error.message);
+  return { ok: !error };
+}

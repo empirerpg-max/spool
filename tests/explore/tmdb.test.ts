@@ -44,8 +44,22 @@ describe('tmdbDiscover', () => {
     expect(u.searchParams.get('watch_region')).toBe('BR');
     expect(u.searchParams.get('with_genres')).toBe('27');
     expect(u.searchParams.get('sort_by')).toBe('vote_average.desc');
-    expect(u.searchParams.get('vote_count.gte')).toBe('300');
+    expect(u.searchParams.get('vote_count.gte')).toBe('1000');
     expect(u.searchParams.get('include_adult')).toBe('false');
+  });
+
+  it('best rated leaves out titles released in the last 6 months (fan votes inflate new releases)', async () => {
+    const f = fakeFetch([{ match: /discover\/movie/, body: page([movie(1)]) }]);
+    await tmdbDiscover('movie', { sort: 'avaliados', page: 1 }, f, '2026-11-17');
+    expect(calledUrl(f).searchParams.get('primary_release_date.lte')).toBe('2026-05-21');
+  });
+
+  it('best rated series: 500 votes and first aired at least 6 months ago', async () => {
+    const f = fakeFetch([{ match: /discover\/tv/, body: page([]) }]);
+    await tmdbDiscover('series', { sort: 'avaliados', page: 1 }, f, '2026-11-17');
+    const u = calledUrl(f);
+    expect(u.searchParams.get('vote_count.gte')).toBe('500');
+    expect(u.searchParams.get('first_air_date.lte')).toBe('2026-05-21');
   });
 
   it('popular films without filters', async () => {
