@@ -1,6 +1,6 @@
 export function SearchBox({ defaultValue, compact = false }: { defaultValue?: string; compact?: boolean }) {
   return (
-    <form action="/busca" method="get" role="search" className="flex w-full gap-2">
+    <form action="/explorar" method="get" role="search" className="flex w-full gap-2">
       <input
         type="search"
         name="q"

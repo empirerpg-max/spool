@@ -27,7 +27,7 @@ async function NotFoundList({ importId }: { importId: string }) {
       <ul className="space-y-1">
         {rows.map(({ id, row }) => (
           <li key={id}>
-            <Link href={`/busca?q=${encodeURIComponent(row.title)}`} className="underline">{row.title}</Link>
+            <Link href={`/explorar?q=${encodeURIComponent(row.title)}`} className="underline">{row.title}</Link>
             <span className="text-muted"> {[row.year, row.author].filter(Boolean).join(' · ')}</span>
           </li>
         ))}

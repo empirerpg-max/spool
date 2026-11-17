@@ -49,6 +49,6 @@ describe('SignedOutHome', () => {
 
   it('keeps the search available', () => {
     render(<SignedOutHome nowPlaying={films} />);
-    expect(screen.getByRole('search')).toHaveAttribute('action', '/busca');
+    expect(screen.getByRole('search')).toHaveAttribute('action', '/explorar');
   });
 });
