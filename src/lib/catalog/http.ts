@@ -2,6 +2,7 @@ import { CatalogUnavailableError, WorkNotFoundError } from './errors';
 
 export type FetchImpl = typeof fetch;
 
+/** Interactive search can't keep people waiting; slow lists (Explorar) pass a longer timeoutMs. */
 const TIMEOUT_MS = 8000;
 const MAX_RETRY_AFTER_S = 5;
 
@@ -17,11 +18,12 @@ export async function getJson(
   source: 'tmdb' | 'books',
   headers: Record<string, string>,
   fetchImpl: FetchImpl,
+  { timeoutMs = TIMEOUT_MS }: { timeoutMs?: number } = {},
 ): Promise<unknown> {
   for (let attempt = 0; attempt < 2; attempt++) {
     let res: Response;
     try {
-      res = await fetchImpl(url, { headers, signal: AbortSignal.timeout(TIMEOUT_MS) });
+      res = await fetchImpl(url, { headers, signal: AbortSignal.timeout(timeoutMs) });
     } catch {
       throw new CatalogUnavailableError(source);
     }

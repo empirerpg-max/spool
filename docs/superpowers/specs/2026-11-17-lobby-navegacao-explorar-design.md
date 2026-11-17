@@ -1,7 +1,7 @@
 # Lobby — Navegação nova, Explorar (catálogo) e busca de pessoas
 
 **Data:** 2026-11-17
-**Status:** aguardando aprovação
+**Status:** aprovado
 
 ## 1. Intenção e o porquê
 
@@ -93,7 +93,7 @@ Aberto a todos (como a busca e as páginas de obra hoje); a parte de **Pessoas**
 - **Populares no Lobby** — como acima, só livros.
 - (Livros não têm "mais bem avaliados" nem "streaming".)
 
-**Páginas "ver mais"** (`/explorar/...`): grade de capas com "Carregar mais"; os filtros de streaming e gênero podem ser combinados com a ordem (Populares / Mais bem avaliados / Mais recentes) — *minha decisão*, cobre "sexta à noite" ("terror no Netflix, bem avaliado").
+**Páginas "ver mais"** (`/explorar/...`): grade de capas com "Carregar mais"; os filtros de streaming e gênero podem ser combinados com a ordem (Populares / Mais bem avaliados / Mais recentes) — *minha decisão*, cobre "sexta à noite" ("terror no Netflix, bem avaliado"). Livros têm só Populares e Mais bem avaliados (no Open Library, "mais recentes" traz quase só obras sem capa).
 
 **Cada capa** leva à página da obra (onde já existem lista, onde assistir, notas, comunidade). Selo pequeno com o serviço de streaming não entra agora (custaria uma consulta por obra).
 

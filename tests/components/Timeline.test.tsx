@@ -70,7 +70,7 @@ describe('TimelineEmpty', () => {
 
   it('still helps when there is nothing to suggest', () => {
     render(<TimelineEmpty people={[]} communities={[]} />);
-    expect(screen.getByRole('link', { name: 'Buscar obras' })).toHaveAttribute('href', '/busca');
+    expect(screen.getByRole('link', { name: 'Buscar obras' })).toHaveAttribute('href', '/explorar?foco=busca');
     expect(screen.queryByRole('heading', { name: 'Comunidades movimentadas da semana' })).toBeNull();
   });
 });

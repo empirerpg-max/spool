@@ -76,7 +76,7 @@ export function TimelineEmpty({ people, communities, path = '/timeline', compact
       )}
 
       <p className="text-sm text-muted">
-        Procurando algo específico? <Link href="/busca" className="underline">Buscar obras</Link>
+        Procurando algo específico? <Link href="/explorar?foco=busca" className="underline">Buscar obras</Link>
       </p>
     </div>
   );
