@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { fetchOmdbRatings, parseOmdb } from '@/lib/catalog/omdb';
+import { checkOmdb, fetchOmdbRatings, parseOmdb } from '@/lib/catalog/omdb';
 import { fakeFetch } from './clients.helpers';
 
 const matrix = {
@@ -85,5 +85,28 @@ describe('fetchOmdbRatings', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const f = vi.fn(async () => new Response('not json', { status: 200 }));
     expect(await fetchOmdbRatings('tt0133093', f)).toBeNull();
+  });
+});
+
+describe('checkOmdb (admin diagnostic)', () => {
+  const res = (status: number, body: unknown) => vi.fn(async () => new Response(JSON.stringify(body), { status }));
+  afterEach(() => { delete process.env.OMDB_API_KEY; });
+
+  it('no key', async () => {
+    delete process.env.OMDB_API_KEY;
+    expect(await checkOmdb(res(200, {}))).toEqual({ status: 'sem_chave' });
+  });
+  it('working', async () => {
+    process.env.OMDB_API_KEY = 'k';
+    expect(await checkOmdb(res(200, { Response: 'True', imdbRating: '8.7', Ratings: [{ Source: 'Rotten Tomatoes', Value: '83%' }] })))
+      .toEqual({ status: 'ok', imdbRating: 8.7, rtScore: 83 });
+  });
+  it('refused key keeps OMDb message', async () => {
+    process.env.OMDB_API_KEY = 'k';
+    expect(await checkOmdb(res(401, { Response: 'False', Error: 'Invalid API key!' }))).toEqual({ status: 'recusada', message: 'Invalid API key!' });
+  });
+  it('unreachable', async () => {
+    process.env.OMDB_API_KEY = 'k';
+    expect(await checkOmdb(vi.fn(async () => { throw new Error('x'); }))).toEqual({ status: 'fora_do_ar' });
   });
 });

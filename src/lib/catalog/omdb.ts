@@ -62,3 +62,28 @@ export async function fetchOmdbRatings(imdbId: string, fetchImpl: FetchImpl = fe
     return null;
   }
 }
+
+export type OmdbCheck =
+  | { status: 'sem_chave' }
+  | { status: 'ok'; imdbRating: number | null; rtScore: number | null }
+  | { status: 'recusada'; message: string | null }
+  | { status: 'fora_do_ar' };
+
+/** Admin diagnostic: asks OMDb about The Matrix and says, in plain terms, whether the key works. */
+export async function checkOmdb(fetchImpl: FetchImpl = fetch): Promise<OmdbCheck> {
+  const key = process.env.OMDB_API_KEY?.trim();
+  if (!key) return { status: 'sem_chave' };
+  try {
+    const res = await fetchImpl(`${BASE}?${new URLSearchParams({ i: 'tt0133093', apikey: key })}`, {
+      headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(TIMEOUT_MS), cache: 'no-store',
+    });
+    const body = (await res.json().catch(() => null)) as Json;
+    if (!res.ok || body?.Response === 'False') {
+      return { status: 'recusada', message: typeof body?.Error === 'string' ? body.Error.slice(0, 120) : null };
+    }
+    const r = parseOmdb(body);
+    return { status: 'ok', imdbRating: r.imdbRating, rtScore: r.rtScore };
+  } catch {
+    return { status: 'fora_do_ar' };
+  }
+}

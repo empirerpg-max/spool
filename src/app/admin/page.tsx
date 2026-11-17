@@ -1,3 +1,4 @@
+import { checkOmdb, type OmdbCheck } from '@/lib/catalog/omdb';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { resolveReport } from '@/lib/admin/actions';
@@ -58,6 +59,15 @@ function Button({ reportId, action, children, danger }: { reportId: string; acti
   );
 }
 
+function omdbText(c: OmdbCheck): string {
+  switch (c.status) {
+    case 'sem_chave': return 'A chave do OMDb não está na Vercel. Crie a variável OMDB_API_KEY (seção 11 do guia) e faça Redeploy.';
+    case 'ok': return `Funcionando. Teste com Matrix: IMDb ${c.imdbRating?.toLocaleString('pt-BR') ?? '—'} · Rotten Tomatoes ${c.rtScore ?? '—'}%.`;
+    case 'recusada': return `O OMDb recusou a chave${c.message ? ` (“${c.message}”)` : ''}. Confira se você clicou no link de ativação do e-mail do OMDb e se colou a chave inteira na Vercel.`;
+    case 'fora_do_ar': return 'O OMDb não respondeu agora. Tente de novo em alguns minutos.';
+  }
+}
+
 export default async function AdminReportsPage() {
   await requireAdmin('/admin');
   const supabase = await createSessionClient();
@@ -69,10 +79,14 @@ export default async function AdminReportsPage() {
     .limit(100);
   if (error) throw new Error(`Supabase: ${error.message}`);
   const reports = (data ?? []) as unknown as ReportRow[];
+  const omdb = await checkOmdb();
 
   return (
     <section className="space-y-6">
       <AdminNav current="/admin" />
+      <p role="status" className={`rounded-lg border p-3 text-sm ${omdb.status === 'ok' ? 'border-line text-muted' : 'border-warn text-warn'}`}>
+        <strong>Notas do IMDb e Rotten Tomatoes:</strong> {omdbText(omdb)}
+      </p>
       <h1 className="text-2xl font-bold">Denúncias abertas</h1>
       {reports.length === 0 && <p className="text-muted">Nenhuma denúncia aberta</p>}
       <ul className="space-y-4">
