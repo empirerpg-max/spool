@@ -85,10 +85,10 @@ Aberto a todos (como a busca e as páginas de obra hoje); a parte de **Pessoas**
 - **Mais bem avaliados** — TMDB "top rated" (mínimo de votos alto, para evitar distorção).
 - **No seu streaming** — botões dos serviços mais comuns no Brasil (Netflix, Prime Video, Max, Disney+, Globoplay, Apple TV+, Paramount+); cada um abre a página "ver mais" filtrada pelo que está no catálogo daquele serviço **no Brasil**.
 - **Por gênero** — botões com os gêneros do TMDB em português; cada um abre "ver mais" filtrado.
-- **Populares no Lobby** — obras mais adicionadas às listas dos membros nos últimos 30 dias (vem do banco do Lobby; aparece só se houver pelo menos 3 obras).
+- **Populares no Lobby** — obras que mais **membros diferentes** adicionaram às listas nos últimos 30 dias (vem do banco do Lobby). *Minhas decisões, por privacidade:* conta listas privadas também, mas só como total; uma obra só entra se **pelo menos 3 membros** a adicionaram (ninguém descobre a lista de uma pessoa); a prateleira aparece só para **membros** e só com pelo menos 3 obras. Contar membros diferentes faz uma importação grande de uma pessoa valer 1, não centenas.
 
 **Prateleiras de livros** (Open Library; sem cota diária):
-- **Em alta esta semana** — Open Library "trending" semanal.
+- **Em alta** — ficção em português publicada recentemente, mais lida no Open Library (a mesma fonte da fileira de livros do Início). *Minha decisão:* o "trending" mundial do Open Library é quase todo em inglês.
 - **Por assunto** — botões (Romance, Fantasia, Ficção científica, Mistério e suspense, Terror, Clássicos, Literatura brasileira, Não ficção, Biografias, Infantojuvenil); cada um abre "ver mais".
 - **Populares no Lobby** — como acima, só livros.
 - (Livros não têm "mais bem avaliados" nem "streaming".)
@@ -102,6 +102,12 @@ Aberto a todos (como a busca e as páginas de obra hoje); a parte de **Pessoas**
 ### 3.3 Busca de pessoas (banco)
 - Função no banco para membros: procura por @ (começo do nome) e por nome no perfil (contém), ignorando acentos e maiúsculas; exclui quem bloqueou ou foi bloqueado e contas banidas; até 20 resultados, quem você segue primeiro.
 - Nunca procura nem mostra nome/sobrenome do cadastro (privados).
+
+### 3.4 Detalhes resolvidos por quem escreveu (*minhas decisões*)
+- A página de busca atual (`/busca`) passa a abrir o Explorar com o termo buscado.
+- As abas Filmes / Séries / Livros também filtram a aba Obras da busca.
+- Pessoas silenciadas aparecem na busca de pessoas (silenciar só tira da timeline e dos avisos); bloqueadas não.
+- "Minha lista" no menu da foto (computador) leva a `/minha-lista`, que tem importação e filtros.
 
 ## 4. Fora do escopo
 - Redesenho visual das telas (cores, tipografia, cartões) — fica para depois; esta etapa muda **onde as coisas estão e como se chega nelas**.
