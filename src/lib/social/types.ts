@@ -1,4 +1,5 @@
 import type { WorkKind } from '@/lib/catalog/types';
+import type { ListStatus } from '@/lib/list/types';
 
 /** A person as shown on cards: photo, name and @. */
 export type Person = { id: string; username: string; displayName: string | null; avatarUrl: string | null };
@@ -25,7 +26,9 @@ export type SocialReply = { id: string; body: string; hasSpoiler: boolean; creat
 export type TimelineEntry =
   | { type: 'post'; key: string; createdAt: string; post: SocialPost }
   | { type: 'review'; key: string; createdAt: string; actor: Person; work: Omit<PostWork, 'id'>; href: string; hasSpoiler: boolean }
-  | { type: 'reply'; key: string; createdAt: string; actor: Person; conversation: string; href: string; body: string; hasSpoiler: boolean };
+  | { type: 'reply'; key: string; createdAt: string; actor: Person; conversation: string; href: string; body: string; hasSpoiler: boolean }
+  /** Someone I follow marked a work in their list (only when they chose to show it; rating only if they chose that too). */
+  | { type: 'list'; key: string; createdAt: string; actor: Person; work: Omit<PostWork, 'id'>; href: string; status: ListStatus; rating: number | null };
 
 /** Someone to follow (empty timeline). */
 export type SuggestedPerson = Person & { recentPosts: number };

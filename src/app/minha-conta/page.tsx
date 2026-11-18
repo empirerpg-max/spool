@@ -33,7 +33,8 @@ export default async function MyAccountPage() {
         {user.username ? (
           <>
             <AvatarPicker avatarUrl={profile.avatarUrl} name={profile.displayName ?? user.username} />
-            <ProfileForm username={user.username} displayName={profile.displayName} bio={profile.bio} listPublic={profile.listPublic} />
+            <ProfileForm username={user.username} displayName={profile.displayName} bio={profile.bio} listPublic={profile.listPublic}
+              shareActivity={profile.shareActivity} shareRatings={profile.shareRatings} />
           </>
         ) : (
           <p className="text-muted"><Link href="/bem-vindo" className="underline">Escolha um nome de usuário</Link> para montar seu perfil.</p>

@@ -1,4 +1,5 @@
 import 'server-only';
+import type { CurrentUser } from '@/lib/auth/current-user';
 import { createSessionClient } from '@/lib/supabase/session';
 import { supabaseConfigured } from '@/lib/supabase/env';
 import type { WorkKind } from '@/lib/catalog/types';
@@ -11,7 +12,9 @@ export type PersonSummary = { id: string; username: string; displayName: string 
 export const one = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? v[0] ?? null : v ?? null);
 
 /** Bio, photo and list setting live apart from the profile: hidden from people with a block either way. */
-type DetailsJoin = { bio?: string | null; avatar_url: string | null; list_public?: boolean };
+type DetailsJoin = {
+  bio?: string | null; avatar_url: string | null; list_public?: boolean; share_activity?: boolean | null; share_ratings?: boolean;
+};
 
 /** A person as embedded in a query (`PERSON`), or as returned flat by suggested_people (avatar_url). */
 export type ProfileJoin = {
@@ -45,19 +48,46 @@ export async function listBlockedAndMuted(): Promise<{ blocked: PersonSummary[];
   return { blocked: people(b.data), muted: people(m.data) };
 }
 
-export type OwnProfile = { displayName: string | null; bio: string | null; avatarUrl: string | null; listPublic: boolean };
+export type OwnProfile = {
+  displayName: string | null; bio: string | null; avatarUrl: string | null; listPublic: boolean;
+  /** null = never answered whether followers see their list activity (counts as off). */
+  shareActivity: boolean | null; shareRatings: boolean;
+};
 
 /** The editable part of the signed-in user's profile. */
 export async function getOwnProfile(userId: string): Promise<OwnProfile> {
-  const empty: OwnProfile = { displayName: null, bio: null, avatarUrl: null, listPublic: false };
+  const empty: OwnProfile = { displayName: null, bio: null, avatarUrl: null, listPublic: false, shareActivity: null, shareRatings: false };
   if (!supabaseConfigured()) return empty;
   const supabase = await createSessionClient();
   const { data, error } = await supabase.from('profiles')
-    .select('display_name, details:profile_details(bio, avatar_url, list_public)').eq('id', userId).maybeSingle();
+    .select('display_name, details:profile_details(bio, avatar_url, list_public, share_activity, share_ratings)').eq('id', userId).maybeSingle();
   if (error) throw new Error(`Supabase: ${error.message}`);
   if (!data) return empty;
   const d = one(data.details as DetailsJoin | DetailsJoin[] | null);
-  return { displayName: data.display_name, bio: d?.bio ?? null, avatarUrl: d?.avatar_url ?? null, listPublic: d?.list_public ?? false };
+  return {
+    displayName: data.display_name, bio: d?.bio ?? null, avatarUrl: d?.avatar_url ?? null, listPublic: d?.list_public ?? false,
+    shareActivity: d?.share_activity ?? null, shareRatings: d?.share_ratings ?? false,
+  };
+}
+
+/**
+ * Whether the signed-in member answered "Mostrar sua atividade para quem te segue?" (null = never answered).
+ * Never breaks a page: on failure it answers false, so the question simply does not show.
+ */
+export async function getShareActivity(userId: string): Promise<boolean | null> {
+  if (!supabaseConfigured()) return false;
+  const supabase = await createSessionClient();
+  const { data, error } = await supabase.from('profile_details').select('share_activity').eq('id', userId).maybeSingle();
+  if (error) {
+    console.error('[social] share_activity failed', error.message);
+    return false;
+  }
+  return (data?.share_activity as boolean | null | undefined) ?? null;
+}
+
+/** Ask once (Início and Timeline) — only members with an @ who are not suspended and never answered. */
+export async function shouldAskShareActivity(user: CurrentUser): Promise<boolean> {
+  return Boolean(user.username) && !user.banned && (await getShareActivity(user.id)) === null;
 }
 
 /** Everything a profile page needs about a person and how the viewer relates to them. */

@@ -36,7 +36,9 @@ export async function updateProfile(_prev: ProfileState, formData: FormData): Pr
   const supabase = await createSessionClient();
   const [names, details] = await Promise.all([
     supabase.from('profiles').update({ display_name: v.displayName }).eq('id', user.id),
-    supabase.from('profile_details').update({ bio: v.bio, list_public: v.listPublic }).eq('id', user.id),
+    supabase.from('profile_details').update({
+      bio: v.bio, list_public: v.listPublic, share_activity: v.shareActivity, share_ratings: v.shareRatings,
+    }).eq('id', user.id),
   ]);
   const error = names.error ?? details.error;
   if (error) {
@@ -44,6 +46,22 @@ export async function updateProfile(_prev: ProfileState, formData: FormData): Pr
     return { error: error.message === 'banned' ? BANNED : 'Não foi possível salvar. Tente de novo.' };
   }
   revalidateProfile(user.username);
+  return { ok: true };
+}
+
+/** Answer to "Mostrar sua atividade para quem te segue?" ("Agora não" = false: never asked again). */
+export async function setShareActivity(share: boolean): Promise<{ ok: boolean }> {
+  const user = await getCurrentUser();
+  if (!user || user.banned) return { ok: false };
+  const supabase = await createSessionClient();
+  const { error } = await supabase.from('profile_details').update({ share_activity: share === true }).eq('id', user.id);
+  if (error) {
+    console.error('[social] setShareActivity failed', error.message);
+    return { ok: false };
+  }
+  revalidatePath('/');
+  revalidatePath('/timeline');
+  revalidatePath('/minha-conta');
   return { ok: true };
 }
 

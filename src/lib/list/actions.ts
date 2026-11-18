@@ -22,8 +22,8 @@ async function existing(workId: string) {
 }
 
 /** Adds the work or changes its state. Leaving "concluído" unpublishes and clears rating/review (the UI confirms first). */
-export async function setStatus(workId: string, workPath: string, status: ListStatus): Promise<void> {
-  if (!statusSchema.safeParse(status).success) return;
+export async function setStatus(workId: string, workPath: string, status: ListStatus): Promise<{ ok: boolean }> {
+  if (!statusSchema.safeParse(status).success) return { ok: false };
   const { supabase, row, live } = await existing(workId);
   let error;
   if (!row) {
@@ -38,6 +38,7 @@ export async function setStatus(workId: string, workPath: string, status: ListSt
   if (error) console.error('[list] setStatus failed', error.message);
   revalidatePath(workPath);
   revalidatePath('/minha-lista');
+  return { ok: !error };
 }
 
 export async function saveReview(workId: string, workPath: string, _prev: ListActionState, formData: FormData): Promise<ListActionState> {

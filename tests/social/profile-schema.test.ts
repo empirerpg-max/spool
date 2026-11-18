@@ -3,12 +3,16 @@ import { profileSchema } from '@/lib/social/profile-schema';
 
 describe('profileSchema', () => {
   it('trims name and bio and reads the checkbox', () => {
-    expect(profileSchema.parse({ displayName: '  Ana Lê  ', bio: '  Gosto de terror. ', listPublic: 'on' }))
-      .toEqual({ displayName: 'Ana Lê', bio: 'Gosto de terror.', listPublic: true });
+    expect(profileSchema.parse({ displayName: '  Ana Lê  ', bio: '  Gosto de terror. ', listPublic: 'on', shareActivity: 'on', shareRatings: 'on' }))
+      .toEqual({ displayName: 'Ana Lê', bio: 'Gosto de terror.', listPublic: true, shareActivity: true, shareRatings: true });
   });
   it('turns empty fields into null and a missing checkbox into false', () => {
-    expect(profileSchema.parse({ displayName: '   ', bio: '' })).toEqual({ displayName: null, bio: null, listPublic: false });
-    expect(profileSchema.parse({})).toEqual({ displayName: null, bio: null, listPublic: false });
+    const empty = { displayName: null, bio: null, listPublic: false, shareActivity: false, shareRatings: false };
+    expect(profileSchema.parse({ displayName: '   ', bio: '' })).toEqual(empty);
+    expect(profileSchema.parse({})).toEqual(empty);
+  });
+  it('never shares ratings without sharing the activity', () => {
+    expect(profileSchema.parse({ shareRatings: 'on' })).toMatchObject({ shareActivity: false, shareRatings: false });
   });
   it('limits the name to 50 and the bio to 160 characters', () => {
     expect(profileSchema.safeParse({ displayName: 'a'.repeat(50), bio: 'b'.repeat(160) }).success).toBe(true);

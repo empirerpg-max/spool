@@ -2,8 +2,10 @@ import { connection } from 'next/server';
 import { HomeTimeline } from '@/components/home/HomeTimeline';
 import { ReleaseRow } from '@/components/home/ReleaseRow';
 import { SignedOutHome } from '@/components/home/SignedOutHome';
-import { getCurrentUser } from '@/lib/auth/current-user';
+import { ShareActivityBanner } from '@/components/social/ShareActivityBanner';
+import { getCurrentUser, type CurrentUser } from '@/lib/auth/current-user';
 import { loadNowPlaying, loadReleases, todaySaoPaulo } from '@/lib/home/releases';
+import { shouldAskShareActivity } from '@/lib/social/queries';
 import { loadTimeline, timelineSuggestions } from '@/lib/social/timeline';
 import type { TimelineEntry } from '@/lib/social/types';
 
@@ -17,8 +19,8 @@ async function timelineEntries(): Promise<TimelineEntry[] | null> {
   }
 }
 
-async function SignedInHome() {
-  const [releases, entries] = await Promise.all([loadReleases(todaySaoPaulo()), timelineEntries()]);
+async function SignedInHome({ user }: { user: CurrentUser }) {
+  const [releases, entries, ask] = await Promise.all([loadReleases(todaySaoPaulo()), timelineEntries(), shouldAskShareActivity(user)]);
   const suggestions = entries?.length === 0 ? await timelineSuggestions() : { people: [], communities: [] };
 
   return (
@@ -30,7 +32,8 @@ async function SignedInHome() {
         <ReleaseRow title="Séries no ar" items={releases.series} />
         <ReleaseRow title="Livros recém-lançados" items={releases.books} />
       </div>
-      <aside className="min-w-0 lg:border-l lg:border-line lg:pl-8">
+      <aside className="min-w-0 space-y-6 lg:border-l lg:border-line lg:pl-8">
+        {ask && <ShareActivityBanner />}
         <HomeTimeline entries={entries} {...suggestions} />
       </aside>
     </div>
@@ -40,5 +43,5 @@ async function SignedInHome() {
 export default async function Home() {
   await connection(); // per-visitor page; the release lists themselves stay cached for hours
   const user = await getCurrentUser();
-  return user ? <SignedInHome /> : <SignedOutHome nowPlaying={await loadNowPlaying()} />;
+  return user ? <SignedInHome user={user} /> : <SignedOutHome nowPlaying={await loadNowPlaying()} />;
 }
