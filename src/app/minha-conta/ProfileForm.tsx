@@ -7,11 +7,16 @@ import { BIO_MAX, DISPLAY_NAME_MAX } from '@/lib/social/profile-schema';
 
 const field = 'w-full rounded-lg border border-line-strong bg-surface px-3 py-2';
 
-type Props = { username: string | null; displayName: string | null; bio: string | null; listPublic: boolean };
+type Props = {
+  username: string | null; displayName: string | null; bio: string | null; listPublic: boolean;
+  /** null = never answered (counts as off). */
+  shareActivity: boolean | null; shareRatings: boolean;
+};
 
-export function ProfileForm({ username, displayName, bio, listPublic }: Props) {
+export function ProfileForm({ username, displayName, bio, listPublic, shareActivity, shareRatings }: Props) {
   const [state, action, pending] = useActionState<ProfileState, FormData>(updateProfile, {});
   const [bioLength, setBioLength] = useState((bio ?? '').length);
+  const [sharing, setSharing] = useState(shareActivity === true);
   const err = state.fieldErrors ?? {};
   return (
     <form action={action} className="max-w-md space-y-4">
@@ -38,6 +43,19 @@ export function ProfileForm({ username, displayName, bio, listPublic }: Props) {
           <span>Mostrar minha lista no meu perfil</span>
         </label>
         <p id="list-public-help" className="ml-6 text-xs text-muted">Aparecem só as obras e se você quer ver, está vendo ou já viu. Suas estrelas e resenhas guardadas nunca aparecem.</p>
+      </div>
+      <div className="space-y-2">
+        <div>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" name="shareActivity" checked={sharing} onChange={(e) => setSharing(e.target.checked)} aria-describedby="share-activity-help" />
+            <span>Mostrar minha atividade para quem me segue</span>
+          </label>
+          <p id="share-activity-help" className="ml-6 text-xs text-muted">Quem te segue vê quando você marca algo como Quero ver, Vendo ou Visto.</p>
+        </div>
+        <label className={`ml-6 flex items-center gap-2 ${sharing ? '' : 'text-muted'}`}>
+          <input type="checkbox" name="shareRatings" defaultChecked={shareRatings} disabled={!sharing} />
+          <span>Mostrar minhas notas junto</span>
+        </label>
       </div>
       {state.error && <p role="alert" className="text-danger">{state.error}</p>}
       {state.ok && <p role="status" className="text-success">Perfil salvo!</p>}

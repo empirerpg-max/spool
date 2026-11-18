@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { removeFromList, saveReview, setStatus, type ListActionState } from '@/lib/list/actions';
 import { LIST_STATUSES, statusLabel, type ListItem } from '@/lib/list/types';
 import type { WorkKind } from '@/lib/catalog/types';
@@ -14,6 +14,8 @@ type Props = {
   item: ListItem | null;
   signedIn: boolean;
   hasUsername: boolean;
+  /** Suspended members can't publish, so they are not invited to. */
+  banned?: boolean;
 };
 
 const box = 'space-y-4';
@@ -62,8 +64,26 @@ function ReviewForm({ kind, workId, workPath, item }: { kind: WorkKind; workId: 
   );
 }
 
-export function ListControls({ kind, workId, workPath, item, signedIn, hasUsername }: Props) {
-  if (!workId) return <div className={box}><p className="text-muted">Lista indisponível no momento</p></div>;
+/** Shown right after marking Visto/Lido; it simply goes away if ignored. */
+function TellTheClub({ workId }: { workId: string }) {
+  return (
+    <div role="status" className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-surface-2/60 p-3">
+      <p className="font-semibold">Contar para o clube?</p>
+      <Link href={`/publicar?obra=${encodeURIComponent(workId)}`} className="rounded-full bg-fg px-4 py-1.5 text-sm font-semibold text-bg">
+        Publicar sobre esta obra
+      </Link>
+    </div>
+  );
+}
+
+export function ListControls(props: Props) {
+  if (!props.workId) return <div className={box}><p className="text-muted">Lista indisponível no momento</p></div>;
+  return <ListControlsFor {...props} workId={props.workId} />;
+}
+
+function ListControlsFor({ kind, workId, workPath, item, signedIn, hasUsername, banned = false }: Props & { workId: string }) {
+  // Set only after the change to Visto/Lido was saved, in this visit.
+  const [justFinished, setJustFinished] = useState(false);
   if (!signedIn) {
     return <div className={box}><Link href={`/entrar?next=${encodeURIComponent(workPath)}`} className="underline">Entre para salvar na sua lista</Link></div>;
   }
@@ -78,7 +98,11 @@ export function ListControls({ kind, workId, workPath, item, signedIn, hasUserna
         {LIST_STATUSES.map((s) => {
           const current = item?.status === s;
           return (
-            <form key={s} action={setStatus.bind(null, workId, workPath, s)}>
+            <form key={s} action={async () => {
+              const wasFinished = item?.status === 'concluido';
+              const r = await setStatus(workId, workPath, s);
+              setJustFinished(Boolean(r?.ok) && s === 'concluido' && !wasFinished);
+            }}>
               <button
                 type="submit"
                 aria-pressed={current}
@@ -104,6 +128,7 @@ export function ListControls({ kind, workId, workPath, item, signedIn, hasUserna
           </form>
         )}
       </div>
+      {justFinished && !banned && <TellTheClub workId={workId} />}
       {item?.status === 'concluido' && <ReviewForm kind={kind} workId={workId} workPath={workPath} item={item} />}
     </section>
   );

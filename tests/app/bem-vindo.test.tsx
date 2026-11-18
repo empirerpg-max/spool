@@ -5,6 +5,7 @@ vi.mock('next/navigation', () => ({ redirect: vi.fn((url: string) => { throw new
 vi.mock('@/lib/auth/current-user', () => ({
   getCurrentUser: vi.fn(async () => ({ id: 'u1', username: null, isAdmin: false, banned: false })),
 }));
+vi.mock('@/lib/social/queries', () => ({ getShareActivity: vi.fn(async () => null) }));
 vi.mock('@/app/bem-vindo/UsernameForm', () => ({ UsernameForm: () => <form aria-label="Nome de usuário" /> }));
 
 import WelcomePage from '@/app/bem-vindo/page';

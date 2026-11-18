@@ -100,6 +100,7 @@ export default async function WorkPage({ params, searchParams }: { params: Param
           item={item}
           signedIn={Boolean(user)}
           hasUsername={Boolean(user?.username)}
+          banned={Boolean(user?.banned)}
         />
       </WorkHero>
 

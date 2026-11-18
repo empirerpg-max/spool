@@ -15,6 +15,8 @@ export const profileSchema = z.object({
   displayName: optionalText(DISPLAY_NAME_MAX, 'Nome no perfil'),
   bio: optionalText(BIO_MAX, 'Biografia'),
   listPublic: checkbox,
-});
+  shareActivity: checkbox,
+  shareRatings: checkbox,
+}).transform((v) => ({ ...v, shareRatings: v.shareActivity && v.shareRatings }));
 
 export type ProfileInput = z.infer<typeof profileSchema>;

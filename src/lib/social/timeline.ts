@@ -2,6 +2,7 @@ import 'server-only';
 import { createSessionClient } from '@/lib/supabase/session';
 import { supabaseConfigured } from '@/lib/supabase/env';
 import { workPath } from '@/lib/catalog/kind';
+import type { ListStatus } from '@/lib/list/types';
 import type { TimelineCursor } from './cursor';
 import { getPostsByIds } from './post-queries';
 import { one, PERSON, toPerson, toWork, WORK, type ProfileJoin, type WorkRow } from './queries';
@@ -9,7 +10,7 @@ import type { ActiveCommunity, Person, SuggestedPerson, TimelineEntry } from './
 
 export const TIMELINE_PAGE = 20;
 type Row = {
-  item_type: 'post' | 'review' | 'reply'; item_id: string; created_at: string; actor_id: string;
+  item_type: 'post' | 'review' | 'reply' | 'list'; item_id: string; created_at: string; actor_id: string;
   work_id: string; social_post_id: string | null; topic_id: string | null;
 };
 
@@ -22,9 +23,19 @@ async function byIds<T extends { id: string }>(db: Db, table: string, columns: s
   return new Map(((data ?? []) as unknown as T[]).map((r) => [r.id, r]));
 }
 
+type ListDetail = { id: string; status: ListStatus; rating: number | string | null };
+
+/** Status (and rating, only when the person shares it) of list items the viewer may see in the timeline. */
+async function listDetails(db: Db, ids: string[]): Promise<Map<string, ListDetail>> {
+  if (ids.length === 0) return new Map();
+  const { data, error } = await db.rpc('timeline_list_details', { p_ids: ids });
+  if (error) throw new Error(`Supabase: ${error.message}`);
+  return new Map(((data ?? []) as ListDetail[]).map((d) => [d.id, d]));
+}
+
 /**
- * One page of the signed-in member's timeline: posts and reviews by people they follow and new replies
- * in conversations they follow. `next` is the cursor for "Carregar mais" (null when there is no more).
+ * One page of the signed-in member's timeline: posts and reviews by people they follow, what they marked in
+ * their lists (when they chose to show it) and new replies in conversations they follow. `next` is the cursor for "Carregar mais" (null when there is no more).
  */
 export async function loadTimeline(before: TimelineCursor | null): Promise<{ entries: TimelineEntry[]; next: TimelineCursor | null }> {
   if (!supabaseConfigured()) return { entries: [], next: null };
@@ -43,12 +54,15 @@ export async function loadTimeline(before: TimelineCursor | null): Promise<{ ent
   type SReply = { id: string; body: string; has_spoiler: boolean; post: { id: string; work: WorkRow | WorkRow[] | null } | Array<{ id: string; work: WorkRow | WorkRow[] | null }> | null };
   type CReply = { id: string; body: string; has_spoiler: boolean; topic: TopicRow | TopicRow[] | null };
 
-  const [posts, people, reviews, sReplies, cReplies] = await Promise.all([
+  const listRows = rows.filter((r) => r.item_type === 'list');
+  const [posts, people, reviews, sReplies, cReplies, lists, listWorks] = await Promise.all([
     getPostsByIds(ids('post')),
     byIds<ProfileJoin>(db, 'profiles', PERSON, rows.map((r) => r.actor_id)),
     byIds<TopicRow>(db, 'topics', `id, title, has_spoiler, work:works(${WORK})`, ids('review')),
     byIds<SReply>(db, 'social_replies', `id, body, has_spoiler, post:social_posts(id, work:works(${WORK}))`, socialReplyIds),
     byIds<CReply>(db, 'posts', `id, body, has_spoiler, topic:topics(id, title, has_spoiler, work:works(${WORK}))`, topicReplyIds),
+    listDetails(db, listRows.map((r) => r.item_id)),
+    byIds<WorkRow & { id: string }>(db, 'works', `id, ${WORK}`, listRows.map((r) => r.work_id)),
   ]);
   const postsById = new Map(posts.map((p) => [p.id, p]));
 
@@ -60,6 +74,16 @@ export async function loadTimeline(before: TimelineCursor | null): Promise<{ ent
     }
     const actor: Person | null = toPerson(people.get(r.actor_id) ?? null);
     if (!actor) return [];
+    if (r.item_type === 'list') {
+      const d = lists.get(r.item_id);
+      const w = listWorks.get(r.work_id);
+      if (!d || !w) return [];
+      const work = toWork(w);
+      return [{
+        type: 'list', key, createdAt: r.created_at, actor, work, href: workPath(work.kind, work.externalId),
+        status: d.status, rating: d.rating === null ? null : Number(d.rating),
+      }];
+    }
     if (r.item_type === 'review') {
       const t = reviews.get(r.item_id);
       const w = t ? one(t.work) : null;
