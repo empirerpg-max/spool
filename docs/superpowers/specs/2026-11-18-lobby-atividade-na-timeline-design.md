@@ -1,7 +1,7 @@
 # Lobby — Atividade da lista na timeline (B + C)
 
 **Data:** 2026-11-18
-**Status:** aguardando aprovação
+**Status:** aprovado
 
 ## Intenção
 "Micael registrou e eu não consigo ver, mesmo seguindo ele" (usuário). O Lobby é um clube de **incentivo**: ver o que os amigos viram, estão vendo e querem ver é o que puxa a pessoa a ver também. Hoje a timeline só mostra publicações, resenhas publicadas e respostas; o que se registra na lista (privada por padrão) fica invisível.
